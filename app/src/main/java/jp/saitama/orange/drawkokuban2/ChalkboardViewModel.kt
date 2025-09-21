@@ -33,16 +33,17 @@ class ChalkboardViewModel : ViewModel() {
 
     private var currentPath = mutableListOf<Offset>()
 
-    fun initializeBitmap(width: Int, height: Int) {
+    fun initializeBitmap(width: Int, height: Int, context: Context? = null) {
+        android.util.Log.d("ChalkboardViewModel", "initializeBitmap called with context: $context")
         val bitmap = createChalkboardBitmap(width, height)
-        fillChalkboardBackground(bitmap)
+        fillChalkboardBackground(bitmap, context)
         state = state.copy(bitmap = bitmap)
     }
 
-    fun createNewBitmap() {
+    fun createNewBitmap(context: Context? = null) {
         state.bitmap?.let { currentBitmap ->
             val newBitmap = createChalkboardBitmap(currentBitmap.width, currentBitmap.height)
-            fillChalkboardBackground(newBitmap)
+            fillChalkboardBackground(newBitmap, context)
             state = state.copy(bitmap = newBitmap)
         }
     }
@@ -125,9 +126,9 @@ class ChalkboardViewModel : ViewModel() {
         currentPath.clear()
     }
 
-    fun clearAll() {
+    fun clearAll(context: Context? = null) {
         val bitmap = state.bitmap ?: return
-        clearAll(bitmap)
+        clearAll(bitmap, context)
         state = state.copy(showClearAllDialog = false)
     }
 
@@ -155,6 +156,8 @@ class ChalkboardViewModel : ViewModel() {
         val file = File(context.filesDir, "chalkboard_$slotNumber.png")
         val bitmap = loadPng(file)
         if (bitmap != null) {
+            // ロードしたビットマップに木目背景を適用
+            fillChalkboardBackground(bitmap, context)
             state = state.copy(bitmap = bitmap)
         }
     }

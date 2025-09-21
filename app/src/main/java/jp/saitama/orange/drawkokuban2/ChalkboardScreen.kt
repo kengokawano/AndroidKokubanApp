@@ -77,7 +77,8 @@ fun ChalkboardScreen(
                     if (viewModel.state.bitmap == null && canvasSize.width > 0 && canvasSize.height > 0) {
                         viewModel.initializeBitmap(
                             canvasSize.width.toInt(),
-                            canvasSize.height.toInt()
+                            canvasSize.height.toInt(),
+                            context
                         )
                     }
                 }
@@ -113,7 +114,7 @@ fun ChalkboardScreen(
                 text = { Text(stringResource(R.string.dialog_clear_all_message)) },
                 confirmButton = {
                     TextButton(
-                        onClick = { viewModel.clearAll() }
+                        onClick = { viewModel.clearAll(context) }
                     ) {
                         Text(stringResource(R.string.dialog_ok))
                     }

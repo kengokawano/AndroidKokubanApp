@@ -1,5 +1,6 @@
 package jp.saitama.orange.drawkokuban2
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -10,6 +11,7 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.BlendMode
 import android.graphics.BitmapFactory
 import android.os.Build
+import android.util.Log
 import androidx.compose.ui.geometry.Offset
 import java.io.File
 import java.io.FileOutputStream
@@ -31,14 +33,20 @@ private val bgPaint = Paint().apply {
     color = Color.rgb(11, 46, 26) // 黒板系の深緑
 }
 
-fun fillChalkboardBackground(target: Bitmap) {
+// 木目テクスチャのキャッシュ
+private var woodTexture: Bitmap? = null
+
+fun fillChalkboardBackground(target: Bitmap, context: Context? = null) {
+    Log.d("ChalkboardUtils", "fillChalkboardBackground called - using pure chalkboard color")
     val c = Canvas(target)
+
+    // 描画エリアは純粋な黒板色（緑）のみ
     c.drawRect(0f, 0f, target.width.toFloat(), target.height.toFloat(), bgPaint)
 }
 
-fun clearAll(target: Bitmap) {
+fun clearAll(target: Bitmap, context: Context? = null) {
     // 全消し＝背景から塗り直す運用
-    fillChalkboardBackground(target)
+    fillChalkboardBackground(target, context)
 }
 
 // ペン描画（白/赤 × 細/太）

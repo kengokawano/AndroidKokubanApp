@@ -6,6 +6,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.List
@@ -67,12 +69,16 @@ fun AppNavigation() {
                 // 何もない場合は新規作成
                 editMode = EditMode.NEW
                 currentSlot = null
-                viewModel.createNewBitmap()
+                viewModel.createNewBitmap(context)
             }
         }
     }
 
-    when (currentScreen) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        // 木目テクスチャ背景
+        WoodTextureBackground()
+
+        when (currentScreen) {
         Screen.CHALKBOARD -> {
             ChalkboardScreenWithControls(
                 viewModel = viewModel,
@@ -99,7 +105,7 @@ fun AppNavigation() {
                 onNewFileConfirm = {
                     editMode = EditMode.NEW
                     currentSlot = null
-                    viewModel.createNewBitmap()
+                    viewModel.createNewBitmap(context)
                     showNewFileDialog = false
                 },
                 onNewFileCancel = {
@@ -116,7 +122,7 @@ fun AppNavigation() {
                     if (file.exists()) {
                         viewModel.loadBitmap(context, slotNumber)
                     } else {
-                        viewModel.createNewBitmap()
+                        viewModel.createNewBitmap(context)
                     }
                     // 選択したスロットを記録
                     val prefs = context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
@@ -127,6 +133,7 @@ fun AppNavigation() {
                     currentScreen = Screen.CHALKBOARD
                 }
             )
+        }
         }
     }
 }
@@ -153,25 +160,25 @@ fun ChalkboardScreenWithControls(
             editMode = editMode,
             currentSlot = currentSlot
         )
+    }
 
-        // 新規作成確認ダイアログ
-        if (showNewFileDialog) {
-            AlertDialog(
-                onDismissRequest = onNewFileCancel,
-                title = { Text(stringResource(R.string.dialog_new_file_title)) },
-                text = { Text(stringResource(R.string.dialog_new_file_message)) },
-                confirmButton = {
-                    TextButton(onClick = onNewFileConfirm) {
-                        Text(stringResource(R.string.dialog_ok))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = onNewFileCancel) {
-                        Text(stringResource(R.string.dialog_cancel))
-                    }
+    // 新規作成確認ダイアログ
+    if (showNewFileDialog) {
+        AlertDialog(
+            onDismissRequest = onNewFileCancel,
+            title = { Text(stringResource(R.string.dialog_new_file_title)) },
+            text = { Text(stringResource(R.string.dialog_new_file_message)) },
+            confirmButton = {
+                TextButton(onClick = onNewFileConfirm) {
+                    Text(stringResource(R.string.dialog_ok))
                 }
-            )
-        }
+            },
+            dismissButton = {
+                TextButton(onClick = onNewFileCancel) {
+                    Text(stringResource(R.string.dialog_cancel))
+                }
+            }
+        )
     }
 }
 
@@ -189,9 +196,7 @@ private fun ChalkboardScreenContent(
     var canvasSize by remember { mutableStateOf(Size.Zero) }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0B2E1A))
+        modifier = Modifier.fillMaxSize()
     ) {
         // ツールバー
         TopAppBar(
@@ -203,7 +208,7 @@ private fun ChalkboardScreenContent(
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color(0xFF0B2E1A)
+                containerColor = Color.Black
             ),
             actions = {
                 // 新規ボタン
@@ -239,7 +244,7 @@ private fun ChalkboardScreenContent(
                 .weight(1f)
                 .padding(16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFF0B2E1A))
+                .background(Color(0xFF0B2E1A)) // キャンバス部分は黒板色（緑）
                 .border(2.dp, Color.Gray, RoundedCornerShape(8.dp))
                 .onGloballyPositioned { coordinates ->
                     canvasSize = Size(
@@ -249,7 +254,8 @@ private fun ChalkboardScreenContent(
                     if (viewModel.state.bitmap == null && canvasSize.width > 0 && canvasSize.height > 0) {
                         viewModel.initializeBitmap(
                             canvasSize.width.toInt(),
-                            canvasSize.height.toInt()
+                            canvasSize.height.toInt(),
+                            context
                         )
                     }
                 }
@@ -296,7 +302,7 @@ private fun ChalkboardScreenContent(
                 text = { Text(stringResource(R.string.dialog_clear_all_message)) },
                 confirmButton = {
                     TextButton(
-                        onClick = { viewModel.clearAll() }
+                        onClick = { viewModel.clearAll(context) }
                     ) {
                         Text(stringResource(R.string.dialog_ok))
                     }
@@ -313,3 +319,12 @@ private fun ChalkboardScreenContent(
     }
 }
 
+@Composable
+fun WoodTextureBackground() {
+    Image(
+        painter = painterResource(R.drawable.wood_texture),
+        contentDescription = null,
+        modifier = Modifier.fillMaxSize(),
+        contentScale = ContentScale.Crop
+    )
+}
