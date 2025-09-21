@@ -16,7 +16,13 @@ import java.io.FileOutputStream
 
 // ビットマップ準備 & 背景
 fun createChalkboardBitmap(width: Int, height: Int): Bitmap {
-    return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    // Mutableであることを確認
+    return if (bitmap.isMutable) {
+        bitmap
+    } else {
+        bitmap.copy(Bitmap.Config.ARGB_8888, true)
+    }
 }
 
 private val bgPaint = Paint().apply {
@@ -71,10 +77,15 @@ private fun makeEraserPaint(radiusPx: Float): Paint {
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
         strokeWidth = radiusPx * 2f // 半径→直径
-        if (Build.VERSION.SDK_INT >= 29) {
-            blendMode = BlendMode.CLEAR
-        } else {
-            xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+        try {
+            if (Build.VERSION.SDK_INT >= 29) {
+                blendMode = BlendMode.CLEAR
+            } else {
+                xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+            }
+        } catch (e: Exception) {
+            // フォールバック: 背景色で上塗り
+            color = Color.rgb(11, 46, 26)
         }
     }
 }
@@ -115,23 +126,12 @@ fun savePng(target: Bitmap, file: File): SlotMeta {
 
 fun loadPng(file: File): Bitmap? {
     if (!file.exists()) return null
-    return BitmapFactory.decodeFile(file.absolutePath)
+    val bitmap = BitmapFactory.decodeFile(file.absolutePath) ?: return null
+    // ロードしたビットマップがMutableであることを確認
+    return if (bitmap.isMutable) {
+        bitmap
+    } else {
+        bitmap.copy(Bitmap.Config.ARGB_8888, true)
+    }
 }
 
-// 簡易間引き
-fun decimatePath(path: List<Offset>, minStepPx: Float): List<Offset> {
-    if (path.isEmpty()) return path
-    val out = ArrayList<Offset>(path.size)
-    var last = path[0]
-    out.add(last)
-    val min2 = minStepPx * minStepPx
-    for (i in 1 until path.size) {
-        val p = path[i]
-        val dx = p.x - last.x; val dy = p.y - last.y
-        if (dx*dx + dy*dy >= min2) {
-            out.add(p)
-            last = p
-        }
-    }
-    return out
-}

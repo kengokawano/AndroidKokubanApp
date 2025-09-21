@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
@@ -40,10 +39,38 @@ enum class EditMode {
 fun AppNavigation() {
     var currentScreen by remember { mutableStateOf(Screen.CHALKBOARD) }
     var currentSlot by remember { mutableStateOf<Int?>(null) }
-    var editMode by remember { mutableStateOf(EditMode.NEW) }
+    var editMode by remember { mutableStateOf(EditMode.EDIT) }
     var showNewFileDialog by remember { mutableStateOf(false) }
     val viewModel: ChalkboardViewModel = viewModel()
     val context = LocalContext.current
+
+    // 起動時の初期化
+    LaunchedEffect(Unit) {
+        // SharedPreferencesから前回開いたスロット番号を取得
+        val prefs = context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
+        val lastSlot = prefs.getInt("last_slot", 1)
+
+        currentSlot = lastSlot
+        editMode = EditMode.EDIT
+
+        // 前回のファイルが存在するかチェック
+        val file = java.io.File(context.filesDir, "chalkboard_$lastSlot.png")
+        if (file.exists()) {
+            viewModel.loadBitmap(context, lastSlot)
+        } else {
+            // スロット1をチェック
+            val slot1File = java.io.File(context.filesDir, "chalkboard_1.png")
+            if (slot1File.exists()) {
+                currentSlot = 1
+                viewModel.loadBitmap(context, 1)
+            } else {
+                // 何もない場合は新規作成
+                editMode = EditMode.NEW
+                currentSlot = null
+                viewModel.createNewBitmap()
+            }
+        }
+    }
 
     when (currentScreen) {
         Screen.CHALKBOARD -> {
@@ -57,7 +84,12 @@ fun AppNavigation() {
                 onSave = {
                     when (editMode) {
                         EditMode.NEW -> viewModel.saveBitmap(context)
-                        EditMode.EDIT -> currentSlot?.let { viewModel.saveBitmap(context, it) }
+                        EditMode.EDIT -> currentSlot?.let {
+                            viewModel.saveBitmap(context, it)
+                            // 保存時に最後に開いたスロットを記録
+                            val prefs = context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
+                            prefs.edit().putInt("last_slot", it).apply()
+                        }
                     }
                 },
                 onNewFile = {
@@ -86,6 +118,9 @@ fun AppNavigation() {
                     } else {
                         viewModel.createNewBitmap()
                     }
+                    // 選択したスロットを記録
+                    val prefs = context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
+                    prefs.edit().putInt("last_slot", slotNumber).apply()
                     currentScreen = Screen.CHALKBOARD
                 },
                 onBackPressed = {
@@ -114,71 +149,10 @@ fun ChalkboardScreenWithControls(
             viewModel = viewModel,
             onNavigateToFileManager = onNavigateToFileManager,
             onSave = onSave,
-            onNewFile = onNewFile
+            onNewFile = onNewFile,
+            editMode = editMode,
+            currentSlot = currentSlot
         )
-
-        // 一覧ボタン（右上）
-        FloatingActionButton(
-            onClick = onNavigateToFileManager,
-            containerColor = Color(0xFF1A3A2A),
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 72.dp, end = 16.dp)
-        ) {
-            Icon(
-                Icons.Default.List,
-                contentDescription = stringResource(R.string.action_file_list),
-                tint = Color.White
-            )
-        }
-
-        // 保存ボタン（一覧ボタンの下）
-        FloatingActionButton(
-            onClick = onSave,
-            containerColor = Color(0xFF1A3A2A),
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 128.dp, end = 16.dp)
-        ) {
-            Icon(
-                Icons.Default.Save,
-                contentDescription = stringResource(R.string.action_save),
-                tint = Color.White
-            )
-        }
-
-        // 新規作成ボタン（保存ボタンの下）
-        FloatingActionButton(
-            onClick = onNewFile,
-            containerColor = Color(0xFF1A3A2A),
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 184.dp, end = 16.dp)
-        ) {
-            Icon(
-                Icons.Default.Add,
-                contentDescription = stringResource(R.string.action_new),
-                tint = Color.White
-            )
-        }
-
-        // 現在のスロット番号表示（編集モードの時のみ）
-        if (editMode == EditMode.EDIT) {
-            Card(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(top = 72.dp, start = 16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1A3A2A).copy(alpha = 0.8f)
-                )
-            ) {
-                Text(
-                    text = stringResource(R.string.mode_edit_slot, currentSlot ?: 0),
-                    color = Color.White,
-                    modifier = Modifier.padding(8.dp)
-                )
-            }
-        }
 
         // 新規作成確認ダイアログ
         if (showNewFileDialog) {
@@ -207,7 +181,9 @@ private fun ChalkboardScreenContent(
     viewModel: ChalkboardViewModel,
     onNavigateToFileManager: () -> Unit,
     onSave: () -> Unit,
-    onNewFile: () -> Unit
+    onNewFile: () -> Unit,
+    editMode: EditMode,
+    currentSlot: Int?
 ) {
     val context = LocalContext.current
     var canvasSize by remember { mutableStateOf(Size.Zero) }
@@ -218,14 +194,35 @@ private fun ChalkboardScreenContent(
             .background(Color(0xFF0B2E1A))
     ) {
         // ツールバー
-        @OptIn(ExperimentalMaterial3Api::class)
         TopAppBar(
-            title = { Text(stringResource(R.string.app_name), color = Color.White) },
+            title = {
+                if (editMode == EditMode.EDIT) {
+                    Text(stringResource(R.string.mode_edit_slot, currentSlot ?: 0), color = Color.White)
+                } else {
+                    Text(stringResource(R.string.app_name), color = Color.White)
+                }
+            },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color(0xFF0B2E1A)
             ),
             actions = {
-                // 一覧ボタン（ヘッダ右上）
+                // 新規ボタン
+                IconButton(onClick = onNewFile) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = stringResource(R.string.action_new),
+                        tint = Color.White
+                    )
+                }
+                // 保存ボタン
+                IconButton(onClick = onSave) {
+                    Icon(
+                        Icons.Default.Save,
+                        contentDescription = stringResource(R.string.action_save),
+                        tint = Color.White
+                    )
+                }
+                // 一覧ボタン（一番右）
                 IconButton(onClick = onNavigateToFileManager) {
                     Icon(
                         Icons.Default.List,
@@ -280,7 +277,7 @@ private fun ChalkboardScreenContent(
             }
         }
 
-        // ツール選択（画面下部に移動）
+        // ツール選択（画面下部）
         ToolSelector(
             penColor = viewModel.state.penColor,
             isThick = viewModel.state.isThick,

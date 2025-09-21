@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
@@ -35,7 +34,6 @@ fun ChalkboardScreen(
     viewModel: ChalkboardViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val density = LocalDensity.current
     var canvasSize by remember { mutableStateOf(Size.Zero) }
 
     Column(
@@ -232,27 +230,6 @@ fun ToolSelector(
     }
 }
 
-@Composable
-fun ToolButton(
-    text: String,
-    isSelected: Boolean,
-    color: Color,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) color.copy(alpha = 0.3f) else Color.Transparent,
-            contentColor = color
-        ),
-        border = if (isSelected) ButtonDefaults.outlinedButtonBorder.copy(
-            brush = SolidColor(color)
-        ) else null,
-        modifier = Modifier.padding(2.dp)
-    ) {
-        Text(text, color = color)
-    }
-}
 
 @Composable
 fun ColorButton(
