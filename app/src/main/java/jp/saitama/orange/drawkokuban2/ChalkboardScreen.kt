@@ -185,7 +185,7 @@ fun ToolSelector(
                     .height(36.dp)
             ) {
                 Text(
-                    text = if (isThick) "太" else "細",
+                    text = if (isThick) stringResource(R.string.tool_thick) else stringResource(R.string.tool_thin),
                     fontSize = 14.sp,
                     fontWeight = if (isThick) FontWeight.Bold else FontWeight.Normal
                 )
@@ -206,7 +206,7 @@ fun ToolSelector(
                     .height(36.dp)
             ) {
                 Text(
-                    text = "消し",
+                    text = stringResource(R.string.tool_eraser),
                     fontSize = 14.sp
                 )
             }
@@ -223,7 +223,7 @@ fun ToolSelector(
                     .height(36.dp)
             ) {
                 Text(
-                    text = "全消し",
+                    text = stringResource(R.string.tool_clear_all),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )

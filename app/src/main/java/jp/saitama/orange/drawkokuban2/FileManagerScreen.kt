@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -79,12 +80,12 @@ fun FileManagerScreen(
         // トップバー
         @OptIn(ExperimentalMaterial3Api::class)
         TopAppBar(
-            title = { Text("ファイル一覧", color = Color.White) },
+            title = { Text(stringResource(R.string.file_manager_title), color = Color.White) },
             navigationIcon = {
                 IconButton(onClick = onBackPressed) {
                     Icon(
                         Icons.Default.ArrowBack,
-                        contentDescription = "戻る",
+                        contentDescription = stringResource(R.string.action_back),
                         tint = Color.White
                     )
                 }
@@ -121,8 +122,8 @@ fun FileManagerScreen(
     showDeleteDialog?.let { slotNumber ->
         AlertDialog(
             onDismissRequest = { showDeleteDialog = null },
-            title = { Text("削除確認") },
-            text = { Text("スロット $slotNumber を削除しますか？") },
+            title = { Text(stringResource(R.string.dialog_delete_title)) },
+            text = { Text(stringResource(R.string.dialog_delete_message, slotNumber)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -141,12 +142,12 @@ fun FileManagerScreen(
                         showDeleteDialog = null
                     }
                 ) {
-                    Text("削除")
+                    Text(stringResource(R.string.dialog_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = null }) {
-                    Text("キャンセル")
+                    Text(stringResource(R.string.dialog_cancel))
                 }
             }
         )
@@ -186,7 +187,7 @@ fun SlotCard(
                         fontSize = 16.sp
                     )
                     Text(
-                        "空き",
+                        stringResource(R.string.file_empty_slot),
                         color = Color.Gray,
                         fontSize = 12.sp
                     )
@@ -208,7 +209,7 @@ fun SlotCard(
                         slot.thumbnail?.let { thumbnail ->
                             Image(
                                 bitmap = thumbnail.asImageBitmap(),
-                                contentDescription = "サムネイル",
+                                contentDescription = stringResource(R.string.content_desc_thumbnail),
                                 modifier = Modifier.fillMaxSize()
                             )
                         }

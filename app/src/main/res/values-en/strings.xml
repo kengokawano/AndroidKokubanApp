@@ -18,6 +18,8 @@
     <!-- Dialogs -->
     <string name="dialog_clear_all_title">Clear All Confirmation</string>
     <string name="dialog_clear_all_message">Clear all content?</string>
+    <string name="dialog_new_file_title">New File Confirmation</string>
+    <string name="dialog_new_file_message">Create a new chalkboard? Current content will be lost.</string>
     <string name="dialog_delete_title">Delete Confirmation</string>
     <string name="dialog_delete_message">Delete slot %1$d?</string>
     <string name="dialog_ok">OK</string>
