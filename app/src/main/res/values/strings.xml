@@ -1,0 +1,42 @@
+<resources>
+    <string name="app_name">黒板太一2</string>
+
+    <!-- ツールメニュー -->
+    <string name="tool_white">白</string>
+    <string name="tool_red">赤</string>
+    <string name="tool_thin">細</string>
+    <string name="tool_thick">太</string>
+    <string name="tool_eraser">消し</string>
+    <string name="tool_clear_all">全消し</string>
+
+    <!-- アクションボタン -->
+    <string name="action_new">新規作成</string>
+    <string name="action_save">保存</string>
+    <string name="action_file_list">ファイル一覧</string>
+    <string name="action_back">戻る</string>
+
+    <!-- ダイアログ -->
+    <string name="dialog_clear_all_title">全消し確認</string>
+    <string name="dialog_clear_all_message">すべての内容を消去しますか？</string>
+    <string name="dialog_delete_title">削除確認</string>
+    <string name="dialog_delete_message">スロット %1$d を削除しますか？</string>
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_cancel">キャンセル</string>
+    <string name="dialog_delete">削除</string>
+
+    <!-- ファイル管理 -->
+    <string name="file_manager_title">ファイル一覧</string>
+    <string name="file_empty_message">保存されたファイルがありません</string>
+    <string name="file_create_new">新しい黒板を作成</string>
+    <string name="file_slot_number">スロット %1$d</string>
+    <string name="file_empty_slot">空き</string>
+
+    <!-- モード表示 -->
+    <string name="mode_new">新規作成</string>
+    <string name="mode_edit_slot">スロット %1$d</string>
+
+    <!-- コンテンツ説明 -->
+    <string name="content_desc_chalkboard">黒板</string>
+    <string name="content_desc_thumbnail">サムネイル</string>
+    <string name="content_desc_no_preview">No Preview</string>
+</resources>
