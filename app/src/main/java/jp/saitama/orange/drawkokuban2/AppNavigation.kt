@@ -28,24 +28,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-enum class Screen {
-    CHALKBOARD,
-    FILE_MANAGER
-}
-
 enum class EditMode {
     EDIT      // 編集モード（指定スロットに保存）
 }
 
 @Composable
 fun AppNavigation() {
-    var currentScreen by remember { mutableStateOf(Screen.CHALKBOARD) }
     var currentSlot by remember { mutableStateOf<Int?>(null) }
     var editMode by remember { mutableStateOf(EditMode.EDIT) }
     val viewModel: ChalkboardViewModel = viewModel()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
 
     // 起動時の初期化
     LaunchedEffect(Unit) {
@@ -74,19 +69,51 @@ fun AppNavigation() {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // 木目テクスチャ背景
-        WoodTextureBackground()
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(
+                modifier = Modifier.width(320.dp)
+            ) {
+                FileManagerScreen(
+                    onFileSelected = { slotNumber ->
+                        currentSlot = slotNumber
+                        val file = java.io.File(context.filesDir, "chalkboard_$slotNumber.png")
+                        if (file.exists()) {
+                            viewModel.loadBitmap(context, slotNumber)
+                        } else {
+                            viewModel.createNewBitmap(context)
+                        }
+                        // 選択したスロットを記録
+                        val prefs = context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
+                        prefs.edit().putInt("last_slot", slotNumber).apply()
+                        scope.launch {
+                            drawerState.close()
+                        }
+                    },
+                    onBackPressed = {
+                        scope.launch {
+                            drawerState.close()
+                        }
+                    }
+                )
+            }
+        }
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // 木目テクスチャ背景
+            WoodTextureBackground()
 
-        when (currentScreen) {
-        Screen.CHALKBOARD -> {
+            // メイン描画画面
             ChalkboardScreenWithControls(
                 viewModel = viewModel,
                 currentSlot = currentSlot,
                 editMode = editMode,
                 snackbarHostState = snackbarHostState,
                 onNavigateToFileManager = {
-                    currentScreen = Screen.FILE_MANAGER
+                    scope.launch {
+                        drawerState.open()
+                    }
                 },
                 onSave = {
                     currentSlot?.let { slot ->
@@ -110,27 +137,6 @@ fun AppNavigation() {
                     }
                 }
             )
-        }
-        Screen.FILE_MANAGER -> {
-            FileManagerScreen(
-                onFileSelected = { slotNumber ->
-                    currentSlot = slotNumber
-                    val file = java.io.File(context.filesDir, "chalkboard_$slotNumber.png")
-                    if (file.exists()) {
-                        viewModel.loadBitmap(context, slotNumber)
-                    } else {
-                        viewModel.createNewBitmap(context)
-                    }
-                    // 選択したスロットを記録
-                    val prefs = context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
-                    prefs.edit().putInt("last_slot", slotNumber).apply()
-                    currentScreen = Screen.CHALKBOARD
-                },
-                onBackPressed = {
-                    currentScreen = Screen.CHALKBOARD
-                }
-            )
-        }
         }
     }
 }
