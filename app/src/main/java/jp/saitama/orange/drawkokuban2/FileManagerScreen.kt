@@ -40,6 +40,38 @@ data class SlotData(
     val isEmpty: Boolean get() = file == null || !file.exists()
 }
 
+// 時間割形式のスロット名称ユーティリティ
+object TimeTableUtils {
+    private val dayNames = arrayOf("月", "火", "水", "木", "金", "土")
+
+    fun getTimeTableName(slotNumber: Int): String {
+        if (slotNumber < 1 || slotNumber > 30) return "不明"
+
+        val dayIndex = (slotNumber - 1) / 5  // 0-5 (月-土)
+        val period = (slotNumber - 1) % 5 + 1  // 1-5時間目
+
+        return "（${dayNames[dayIndex]}）${period}時間目"
+    }
+
+    fun getShortTimeTableName(slotNumber: Int): String {
+        if (slotNumber < 1 || slotNumber > 30) return "?"
+
+        val dayIndex = (slotNumber - 1) / 5
+        val period = (slotNumber - 1) % 5 + 1
+
+        return "${dayNames[dayIndex]}${period}"
+    }
+
+    fun getHeaderTimeTableName(slotNumber: Int): String {
+        if (slotNumber < 1 || slotNumber > 30) return "不明"
+
+        val dayIndex = (slotNumber - 1) / 5  // 0-5 (月-土)
+        val period = (slotNumber - 1) % 5 + 1  // 1-5時間目
+
+        return "${dayNames[dayIndex]}曜日　${period}時間目"
+    }
+}
+
 @Composable
 fun FileManagerScreen(
     onFileSelected: (Int) -> Unit,
@@ -50,7 +82,7 @@ fun FileManagerScreen(
     var slots by remember { mutableStateOf<List<SlotData>>(emptyList()) }
     var showDeleteDialog by remember { mutableStateOf<Int?>(null) }
 
-    // 30個のスロットを初期化
+    // 30個のスロットを初期化（月〜土の1〜5時間目）
     LaunchedEffect(Unit) {
         val slotList = mutableListOf<SlotData>()
         for (i in 1..30) {
@@ -123,7 +155,7 @@ fun FileManagerScreen(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = null },
             title = { Text(stringResource(R.string.dialog_delete_title)) },
-            text = { Text(stringResource(R.string.dialog_delete_message, slotNumber)) },
+            text = { Text(stringResource(R.string.dialog_delete_message, TimeTableUtils.getTimeTableName(slotNumber))) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -182,14 +214,16 @@ fun SlotCard(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        "${slot.slotNumber}",
+                        TimeTableUtils.getShortTimeTableName(slot.slotNumber),
                         color = Color.Gray,
-                        fontSize = 16.sp
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center
                     )
                     Text(
                         stringResource(R.string.file_empty_slot),
                         color = Color.Gray,
-                        fontSize = 12.sp
+                        fontSize = 10.sp,
+                        textAlign = TextAlign.Center
                     )
                 }
             } else {
@@ -221,9 +255,10 @@ fun SlotCard(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "${slot.slotNumber}",
+                            TimeTableUtils.getShortTimeTableName(slot.slotNumber),
                             color = Color.White,
-                            fontSize = 12.sp
+                            fontSize = 11.sp,
+                            textAlign = TextAlign.Center
                         )
                         slot.lastModified?.let {
                             Text(

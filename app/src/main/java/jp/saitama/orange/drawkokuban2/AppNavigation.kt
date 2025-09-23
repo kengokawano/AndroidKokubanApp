@@ -188,7 +188,9 @@ private fun ChalkboardScreenContent(
         TopAppBar(
             title = {
                 if (editMode == EditMode.EDIT) {
-                    Text(stringResource(R.string.mode_edit_slot, currentSlot ?: 0), color = Color.White)
+                    currentSlot?.let { slot ->
+                        Text(TimeTableUtils.getHeaderTimeTableName(slot), color = Color.White)
+                    } ?: Text(stringResource(R.string.app_name), color = Color.White)
                 } else {
                     Text(stringResource(R.string.app_name), color = Color.White)
                 }
