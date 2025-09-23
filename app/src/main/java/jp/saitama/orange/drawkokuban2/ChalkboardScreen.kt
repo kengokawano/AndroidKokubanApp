@@ -3,6 +3,7 @@ package jp.saitama.orange.drawkokuban2
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
@@ -24,10 +25,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+
+// 選択状態の色定数
+private val SELECTED_BORDER_COLOR = Color(0xFFFFD700) // 鮮やかなゴールド
 
 @Composable
 fun ChalkboardScreen(
@@ -144,7 +149,7 @@ fun ToolSelector(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 24.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF1A3A2A)
         )
@@ -157,74 +162,99 @@ fun ToolSelector(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 白ボタン
-            ColorButton(
-                text = stringResource(R.string.tool_white),
-                isSelected = !isEraser && penColor == PenColor.WHITE,
-                color = Color.White,
-                onClick = { onColorSelected(PenColor.WHITE) }
-            )
+            IconButton(
+                onClick = { onColorSelected(PenColor.WHITE) },
+                modifier = Modifier
+                    .size(56.dp)
+                    .background(Color.Transparent, RoundedCornerShape(8.dp))
+                    .then(
+                        if (!isEraser && penColor == PenColor.WHITE)
+                            Modifier.border(3.dp, SELECTED_BORDER_COLOR, RoundedCornerShape(8.dp))
+                        else Modifier
+                    )
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.pen_white_128),
+                    contentDescription = stringResource(R.string.tool_white),
+                    modifier = Modifier.size(48.dp),
+                    tint = Color.Unspecified
+                )
+            }
 
             // 赤ボタン
-            ColorButton(
-                text = stringResource(R.string.tool_red),
-                isSelected = !isEraser && penColor == PenColor.RED,
-                color = Color.Red,
-                onClick = { onColorSelected(PenColor.RED) }
-            )
+            IconButton(
+                onClick = { onColorSelected(PenColor.RED) },
+                modifier = Modifier
+                    .size(56.dp)
+                    .background(Color.Transparent, RoundedCornerShape(8.dp))
+                    .then(
+                        if (!isEraser && penColor == PenColor.RED)
+                            Modifier.border(3.dp, SELECTED_BORDER_COLOR, RoundedCornerShape(8.dp))
+                        else Modifier
+                    )
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.pen_pink_128),
+                    contentDescription = stringResource(R.string.tool_red),
+                    modifier = Modifier.size(48.dp),
+                    tint = Color.Unspecified
+                )
+            }
 
             // 太さ切り替えボタン
             Button(
                 onClick = onThicknessToggled,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (!isEraser) Color.White.copy(alpha = 0.2f) else Color.Transparent,
+                    containerColor = Color.Transparent,
                     contentColor = Color.White
                 ),
                 modifier = Modifier
                     .padding(horizontal = 4.dp)
-                    .height(36.dp)
+                    .height(48.dp)
+                    .width(64.dp)
             ) {
                 Text(
                     text = if (isThick) stringResource(R.string.tool_thick) else stringResource(R.string.tool_thin),
-                    fontSize = 14.sp,
+                    fontSize = 22.sp,
                     fontWeight = if (isThick) FontWeight.Bold else FontWeight.Normal
                 )
             }
 
             // 消しゴムボタン
-            Button(
+            IconButton(
                 onClick = onEraserSelected,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isEraser) Color.Gray.copy(alpha = 0.3f) else Color.Transparent,
-                    contentColor = Color.Gray
-                ),
-                border = if (isEraser) ButtonDefaults.outlinedButtonBorder.copy(
-                    brush = SolidColor(Color.Gray)
-                ) else null,
                 modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .height(36.dp)
+                    .size(56.dp)
+                    .background(Color.Transparent, RoundedCornerShape(8.dp))
+                    .then(
+                        if (isEraser)
+                            Modifier.border(3.dp, SELECTED_BORDER_COLOR, RoundedCornerShape(8.dp))
+                        else Modifier
+                    )
             ) {
-                Text(
-                    text = stringResource(R.string.tool_eraser),
-                    fontSize = 14.sp
+                Icon(
+                    painter = painterResource(R.drawable.eraser_128),
+                    contentDescription = stringResource(R.string.tool_eraser),
+                    modifier = Modifier.size(48.dp),
+                    tint = Color.Unspecified
                 )
             }
 
             // 全消しボタン
-            Button(
+            IconButton(
                 onClick = onClearAllRequested,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Red.copy(alpha = 0.3f),
-                    contentColor = Color.Red
-                ),
                 modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .height(36.dp)
+                    .size(56.dp)
+                    .background(
+                        Color.Transparent,
+                        RoundedCornerShape(8.dp)
+                    )
             ) {
-                Text(
-                    text = stringResource(R.string.tool_clear_all),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                Icon(
+                    painter = painterResource(R.drawable.bucket_128),
+                    contentDescription = stringResource(R.string.tool_clear_all),
+                    modifier = Modifier.size(48.dp),
+                    tint = Color.Unspecified
                 )
             }
         }

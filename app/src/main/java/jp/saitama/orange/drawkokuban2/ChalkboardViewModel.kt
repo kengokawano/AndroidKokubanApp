@@ -103,13 +103,13 @@ class ChalkboardViewModel : ViewModel() {
         // リアルタイム描画
         if (currentPath.size >= 2) {
             if (state.isEraser) {
-                erasePath(bitmap, currentPath.takeLast(2), 24f)
+                erasePath(bitmap, currentPath.takeLast(2), 48f)
             } else {
                 val color = when (state.penColor) {
                     PenColor.WHITE -> Color.WHITE
                     PenColor.RED -> Color.RED
                 }
-                val thickness = if (state.isThick) 12f else 6f
+                val thickness = if (state.isThick) 18f else 6f
                 drawStroke(bitmap, currentPath.takeLast(2), color, thickness)
             }
 

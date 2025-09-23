@@ -69,6 +69,7 @@ fun drawStroke(
     thicknessPx: Float
 ) {
     if (points.size < 2) return
+
     val c = Canvas(target)
     val path = Path().apply {
         moveTo(points.first().x, points.first().y)
