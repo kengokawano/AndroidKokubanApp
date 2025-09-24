@@ -9,8 +9,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +30,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -46,6 +56,16 @@ fun AppNavigation() {
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     var refreshTrigger by remember { mutableStateOf(0) }
+    var showSettings by remember { mutableStateOf(false) }
+    var showAbout by remember { mutableStateOf(false) }
+
+    // 設定の状態管理
+    var showDateOverlay by remember {
+        mutableStateOf(
+            context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+                .getBoolean("show_date_overlay", true)
+        )
+    }
 
     // 起動時の初期化
     LaunchedEffect(Unit) {
@@ -128,8 +148,9 @@ fun AppNavigation() {
                             // 保存成功時にSnackbarを表示
                             scope.launch {
                                 val job = launch {
+                                    val slotName = DateTimeSlotUtils.getSlotName(slot, System.currentTimeMillis())
                                     snackbarHostState.showSnackbar(
-                                        message = "${TimeTableUtils.getTimeTableName(slot)}に保存しました",
+                                        message = "${slotName}に保存しました",
                                         duration = SnackbarDuration.Indefinite
                                     )
                                 }
@@ -143,7 +164,41 @@ fun AppNavigation() {
                             refreshTrigger++
                         }
                     }
+                },
+                onShowSettings = { showSettings = true },
+                onShowAbout = { showAbout = true },
+                showDateOverlay = showDateOverlay,
+                onDateOverlayChanged = { newValue ->
+                    showDateOverlay = newValue
+                    // SharedPreferencesに保存
+                    context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+                        .edit()
+                        .putBoolean("show_date_overlay", newValue)
+                        .apply()
                 }
+            )
+        }
+
+        // 設定ダイアログ
+        if (showSettings) {
+            SettingsDialog(
+                showDateOverlay = showDateOverlay,
+                onDateOverlayChanged = { newValue ->
+                    showDateOverlay = newValue
+                    // SharedPreferencesに保存
+                    context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+                        .edit()
+                        .putBoolean("show_date_overlay", newValue)
+                        .apply()
+                },
+                onDismiss = { showSettings = false }
+            )
+        }
+
+        // Aboutダイアログ
+        if (showAbout) {
+            AboutDialog(
+                onDismiss = { showAbout = false }
             )
         }
     }
@@ -156,8 +211,16 @@ fun ChalkboardScreenWithControls(
     editMode: EditMode,
     snackbarHostState: SnackbarHostState,
     onNavigateToFileManager: () -> Unit,
-    onSave: () -> Unit
+    onSave: () -> Unit,
+    onShowSettings: () -> Unit,
+    onShowAbout: () -> Unit,
+    showDateOverlay: Boolean,
+    onDateOverlayChanged: (Boolean) -> Unit
 ) {
+    val context = LocalContext.current
+    var showSettings by remember { mutableStateOf(false) }
+    var showAbout by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         // メインの黒板画面
         ChalkboardScreenContent(
@@ -165,13 +228,48 @@ fun ChalkboardScreenWithControls(
             onNavigateToFileManager = onNavigateToFileManager,
             onSave = onSave,
             editMode = editMode,
-            currentSlot = currentSlot
+            currentSlot = currentSlot,
+            onShowSettings = { showSettings = true },
+            onShowAbout = { showAbout = true },
+            showDateOverlay = showDateOverlay
         )
 
         // Snackbar
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.Center)
+        )
+    }
+
+    // 設定ダイアログ
+    if (showSettings) {
+        SettingsDialog(
+            showDateOverlay = showDateOverlay,
+            onDateOverlayChanged = { newValue -> onDateOverlayChanged(newValue) },
+            onDismiss = { showSettings = false }
+        )
+    }
+
+    // Aboutダイアログ
+    if (showAbout) {
+        AboutDialog(
+            onDismiss = { showAbout = false }
+        )
+    }
+
+    // 設定ダイアログ
+    if (showSettings) {
+        SettingsDialog(
+            showDateOverlay = showDateOverlay,
+            onDateOverlayChanged = { newValue -> onDateOverlayChanged(newValue) },
+            onDismiss = { showSettings = false }
+        )
+    }
+
+    // Aboutダイアログ
+    if (showAbout) {
+        AboutDialog(
+            onDismiss = { showAbout = false }
         )
     }
 
@@ -184,7 +282,10 @@ private fun ChalkboardScreenContent(
     onNavigateToFileManager: () -> Unit,
     onSave: () -> Unit,
     editMode: EditMode,
-    currentSlot: Int?
+    currentSlot: Int?,
+    onShowSettings: () -> Unit,
+    onShowAbout: () -> Unit,
+    showDateOverlay: Boolean
 ) {
     val context = LocalContext.current
     var canvasSize by remember { mutableStateOf(Size.Zero) }
@@ -197,31 +298,79 @@ private fun ChalkboardScreenContent(
             title = {
                 if (editMode == EditMode.EDIT) {
                     currentSlot?.let { slot ->
-                        Text(TimeTableUtils.getHeaderTimeTableName(slot), color = Color.White)
-                    } ?: Text(stringResource(R.string.app_name), color = Color.White)
+                        // 現在のファイルの保存日時を取得
+                        val file = java.io.File(context.filesDir, "chalkboard_$slot.png")
+                        val headerText = if (file.exists()) {
+                            DateTimeSlotUtils.getHeaderSlotName(slot, file.lastModified())
+                        } else {
+                            "新規作成"
+                        }
+                        Text(
+                            headerText,
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.graphicsLayer(scaleX = 0.8f)
+                        )
+                    } ?: Text(
+                        stringResource(R.string.app_name),
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.graphicsLayer(scaleX = 0.8f)
+                    )
                 } else {
-                    Text(stringResource(R.string.app_name), color = Color.White)
+                    Text(
+                        stringResource(R.string.app_name),
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.graphicsLayer(scaleX = 0.8f)
+                    )
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Black
             ),
             actions = {
-                // 保存ボタン
-                IconButton(onClick = onSave) {
-                    Icon(
-                        Icons.Default.Save,
-                        contentDescription = stringResource(R.string.action_save),
-                        tint = Color.White
-                    )
-                }
-                // 一覧ボタン（一番右）
-                IconButton(onClick = onNavigateToFileManager) {
-                    Icon(
-                        Icons.Default.List,
-                        contentDescription = stringResource(R.string.action_file_list),
-                        tint = Color.White
-                    )
+                Row {
+                    // Aboutボタン
+                    IconButton(onClick = onShowAbout) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = "About",
+                            tint = Color.White
+                        )
+                    }
+                    // 設定ボタン（Aboutと詰める）
+                    IconButton(
+                        onClick = onShowSettings,
+                        modifier = Modifier.offset(x = (-8).dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = Color.White
+                        )
+                    }
+                    // 大きめのスペーサー（保存との間）
+                    Spacer(modifier = Modifier.width(16.dp))
+                    // 保存ボタン
+                    IconButton(onClick = onSave) {
+                        Icon(
+                            Icons.Default.Save,
+                            contentDescription = stringResource(R.string.action_save),
+                            tint = Color.White
+                        )
+                    }
+                    // 一覧ボタン（一番右）
+                    IconButton(onClick = onNavigateToFileManager) {
+                        Icon(
+                            Icons.Default.List,
+                            contentDescription = stringResource(R.string.action_file_list),
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         )
@@ -271,12 +420,15 @@ private fun ChalkboardScreenContent(
             }
 
             // 日付表示（右上オーバーレイ）
-            DateOverlay(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-            )
+            if (showDateOverlay) {
+                DateOverlay(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 16.dp, end = 8.dp)
+                )
+            }
         }
+
 
         // ツール選択（画面下部）
         ToolSelector(
@@ -400,4 +552,184 @@ private fun getJapaneseNumber(number: Int): String {
         number < 40 -> "${tens[number / 10]}${if (number % 10 != 0) ones[number % 10] else ""}"
         else -> number.toString()
     }
+}
+
+@Composable
+fun SettingsDialog(
+    showDateOverlay: Boolean,
+    onDateOverlayChanged: (Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("設定")
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "アプリケーション設定",
+                    fontSize = 18.sp,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // ペン設定セクション
+                Text(
+                    "描画設定",
+                    fontSize = 16.sp,
+                    color = Color.DarkGray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("• ペンサイズ調整機能（予定）")
+                Text("• 描画速度調整（予定）")
+                Text("• 筆圧対応（予定）")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 表示設定セクション
+                Text(
+                    "表示設定",
+                    fontSize = 16.sp,
+                    color = Color.DarkGray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // 日付表示切り替え
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("右上の日付表示")
+                    Switch(
+                        checked = showDateOverlay,
+                        onCheckedChange = onDateOverlayChanged
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("• 木目背景の変更（予定）")
+                Text("• テーマ変更（予定）")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // ファイル設定セクション
+                Text(
+                    "ファイル設定",
+                    fontSize = 16.sp,
+                    color = Color.DarkGray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("• 自動保存機能（予定）")
+                Text("• バックアップ機能（予定）")
+                Text("• エクスポート機能（予定）")
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("閉じる")
+            }
+        }
+    )
+}
+
+@Composable
+fun AboutDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Info,
+                    contentDescription = null,
+                    tint = Color(0xFF0B2E1A),
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("黒板太一2について")
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // アプリ基本情報
+                Text(
+                    "黒板太一2",
+                    fontSize = 20.sp,
+                    color = Color(0xFF0B2E1A)
+                )
+                Text(
+                    "Chalkboard Taichi 2",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    "デジタル黒板描画アプリケーション",
+                    fontSize = 16.sp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // バージョン情報
+                Text(
+                    "アプリ情報",
+                    fontSize = 16.sp,
+                    color = Color.DarkGray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("バージョン: 2.0.0")
+                Text("ビルド日: 2024年9月24日")
+                Text("対応OS: Android 8.0以上")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 主な機能
+                Text(
+                    "主な機能",
+                    fontSize = 16.sp,
+                    color = Color.DarkGray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("✓ 白・赤チョークでの自然な描画")
+                Text("✓ 太い・細いペン切り替え")
+                Text("✓ 消しゴム・全消し機能")
+                Text("✓ 30スロットファイル管理")
+                Text("✓ 日付時間ベース命名")
+                Text("✓ 多言語対応（日本語・英語）")
+                Text("✓ 木目テクスチャ背景")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 開発者情報
+                Text(
+                    "開発者情報",
+                    fontSize = 16.sp,
+                    color = Color.DarkGray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("開発者: Orange Saitama")
+                Text("技術: Kotlin, Jetpack Compose")
+                Text("© 2024 Orange Saitama")
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "このアプリは教育現場での利用を想定して開発されました。",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("閉じる")
+            }
+        }
+    )
 }

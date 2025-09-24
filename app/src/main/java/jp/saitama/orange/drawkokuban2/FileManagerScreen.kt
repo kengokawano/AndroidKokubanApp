@@ -41,35 +41,40 @@ data class SlotData(
     val isEmpty: Boolean get() = file == null || !file.exists()
 }
 
-// 時間割形式のスロット名称ユーティリティ
-object TimeTableUtils {
-    private val dayNames = arrayOf("月", "火", "水", "木", "金", "土")
+// 日付時間形式のスロット名称ユーティリティ
+object DateTimeSlotUtils {
 
-    fun getTimeTableName(slotNumber: Int): String {
-        if (slotNumber < 1 || slotNumber > 36) return "不明"
+    fun getSlotName(slotNumber: Int, saveDate: Long): String {
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = saveDate
 
-        val dayIndex = (slotNumber - 1) / 6  // 0-5 (月-土)
-        val period = (slotNumber - 1) % 6 + 1  // 1-6時間目
+        val month = calendar.get(Calendar.MONTH) + 1
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
 
-        return "（${dayNames[dayIndex]}）${period}時間目"
+        return "${month}月${day}日${hour}時間目"
     }
 
-    fun getShortTimeTableName(slotNumber: Int): String {
-        if (slotNumber < 1 || slotNumber > 36) return "?"
+    fun getShortSlotName(slotNumber: Int, saveDate: Long): String {
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = saveDate
 
-        val dayIndex = (slotNumber - 1) / 6
-        val period = (slotNumber - 1) % 6 + 1
+        val month = calendar.get(Calendar.MONTH) + 1
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
 
-        return "${dayNames[dayIndex]}${period}"
+        return "${month}/${day} ${hour}h"
     }
 
-    fun getHeaderTimeTableName(slotNumber: Int): String {
-        if (slotNumber < 1 || slotNumber > 36) return "不明"
+    fun getHeaderSlotName(slotNumber: Int, saveDate: Long): String {
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = saveDate
 
-        val dayIndex = (slotNumber - 1) / 6  // 0-5 (月-土)
-        val period = (slotNumber - 1) % 6 + 1  // 1-6時間目
+        val month = calendar.get(Calendar.MONTH) + 1
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
 
-        return "${dayNames[dayIndex]}曜日　${period}時間目"
+        return "${month}月${day}日　${hour}時間目"
     }
 }
 
@@ -87,7 +92,7 @@ fun FileManagerScreen(
     // スロットリストを更新する関数
     fun updateSlots() {
         val slotList = mutableListOf<SlotData>()
-        for (i in 1..36) {
+        for (i in 1..30) {
             val file = File(context.filesDir, "chalkboard_$i.png")
             val thumbnail = if (file.exists()) {
                 val bitmap = loadPng(file)
@@ -106,7 +111,7 @@ fun FileManagerScreen(
         slots = slotList
     }
 
-    // 36個のスロットを初期化（月〜土の1〜6時間目）
+    // 30個のスロットを初期化
     LaunchedEffect(Unit) {
         updateSlots()
     }
@@ -167,7 +172,13 @@ fun FileManagerScreen(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = null },
             title = { Text(stringResource(R.string.dialog_delete_title)) },
-            text = { Text(stringResource(R.string.dialog_delete_message, TimeTableUtils.getTimeTableName(slotNumber))) },
+            text = {
+                val slot = slots.find { it.slotNumber == slotNumber }
+                val slotName = slot?.lastModified?.let {
+                    DateTimeSlotUtils.getSlotName(slotNumber, it)
+                } ?: "空き$slotNumber"
+                Text(stringResource(R.string.dialog_delete_message, slotName))
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -226,15 +237,9 @@ fun SlotCard(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        TimeTableUtils.getShortTimeTableName(slot.slotNumber),
+                        "空き${slot.slotNumber}",
                         color = Color.Gray,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        stringResource(R.string.file_empty_slot),
-                        color = Color.Gray,
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -266,14 +271,16 @@ fun SlotCard(
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
-                            TimeTableUtils.getShortTimeTableName(slot.slotNumber),
+                            slot.lastModified?.let {
+                                DateTimeSlotUtils.getShortSlotName(slot.slotNumber, it)
+                            } ?: "空き${slot.slotNumber}",
                             color = Color.White,
                             fontSize = 10.sp,
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                         )
                     }
 
-                    // 更新日時（右下オーバーレイ）
+                    // 保存時間（右下オーバーレイ）
                     slot.lastModified?.let {
                         Surface(
                             modifier = Modifier
@@ -283,7 +290,7 @@ fun SlotCard(
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
-                                SimpleDateFormat("MM/dd", Locale.getDefault())
+                                SimpleDateFormat("HH:mm", Locale.getDefault())
                                     .format(Date(it)),
                                 color = Color.Gray,
                                 fontSize = 9.sp,

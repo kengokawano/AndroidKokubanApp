@@ -157,7 +157,7 @@ class ChalkboardViewModel : ViewModel() {
     }
 
     private fun findNextAvailableSlot(context: Context): Int {
-        for (i in 1..36) {
+        for (i in 1..30) {
             val file = File(context.filesDir, "chalkboard_$i.png")
             if (!file.exists()) {
                 return i

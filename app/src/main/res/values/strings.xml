@@ -21,7 +21,7 @@
     <string name="dialog_new_file_title">新規作成確認</string>
     <string name="dialog_new_file_message">新しい黒板を作成しますか？現在の内容は失われます。</string>
     <string name="dialog_delete_title">削除確認</string>
-    <string name="dialog_delete_message">スロット %1$d を削除しますか？</string>
+    <string name="dialog_delete_message">%1$s を削除しますか？</string>
     <string name="dialog_ok">OK</string>
     <string name="dialog_cancel">キャンセル</string>
     <string name="dialog_delete">削除</string>

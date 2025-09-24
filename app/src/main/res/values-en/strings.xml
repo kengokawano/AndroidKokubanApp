@@ -21,7 +21,7 @@
     <string name="dialog_new_file_title">New File Confirmation</string>
     <string name="dialog_new_file_message">Create a new chalkboard? Current content will be lost.</string>
     <string name="dialog_delete_title">Delete Confirmation</string>
-    <string name="dialog_delete_message">Delete slot %1$d?</string>
+    <string name="dialog_delete_message">Delete %1$s?</string>
     <string name="dialog_ok">OK</string>
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_delete">Delete</string>
