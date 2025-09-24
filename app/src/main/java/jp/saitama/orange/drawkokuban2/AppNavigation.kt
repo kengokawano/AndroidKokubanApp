@@ -26,7 +26,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 enum class EditMode {
     EDIT      // 編集モード（指定スロットに保存）
@@ -41,6 +45,7 @@ fun AppNavigation() {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
+    var refreshTrigger by remember { mutableStateOf(0) }
 
     // 起動時の初期化
     LaunchedEffect(Unit) {
@@ -95,7 +100,8 @@ fun AppNavigation() {
                         scope.launch {
                             drawerState.close()
                         }
-                    }
+                    },
+                    refreshTrigger = refreshTrigger
                 )
             }
         }
@@ -123,7 +129,7 @@ fun AppNavigation() {
                             scope.launch {
                                 val job = launch {
                                     snackbarHostState.showSnackbar(
-                                        message = "スロット${slot}に保存しました",
+                                        message = "${TimeTableUtils.getTimeTableName(slot)}に保存しました",
                                         duration = SnackbarDuration.Indefinite
                                     )
                                 }
@@ -133,6 +139,8 @@ fun AppNavigation() {
                             // 保存時に最後に開いたスロットを記録
                             val prefs = context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
                             prefs.edit().putInt("last_slot", slot).apply()
+                            // ファイルマネージャーの更新をトリガー
+                            refreshTrigger++
                         }
                     }
                 }
@@ -261,6 +269,13 @@ private fun ChalkboardScreenContent(
                     modifier = Modifier.fillMaxSize()
                 )
             }
+
+            // 日付表示（右上オーバーレイ）
+            DateOverlay(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+            )
         }
 
         // ツール選択（画面下部）
@@ -307,4 +322,82 @@ fun WoodTextureBackground() {
         modifier = Modifier.fillMaxSize(),
         contentScale = ContentScale.Crop
     )
+}
+
+@Composable
+fun DateOverlay(modifier: Modifier = Modifier) {
+    val today = Calendar.getInstance()
+    val japaneseMonth = getJapaneseMonth(today.get(Calendar.MONTH) + 1)
+    val day = today.get(Calendar.DAY_OF_MONTH)
+    val dayOfWeek = getJapaneseDayOfWeek(today.get(Calendar.DAY_OF_WEEK))
+
+    // 縦書き1行表示（括弧部分は横並び）
+    val beforeParen = "${japaneseMonth}${getJapaneseNumber(day)}日"
+    val parenPart = "（$dayOfWeek）"
+    val afterParen = "日直　XX"
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // 括弧前の文字を縦に表示
+        beforeParen.forEach { char ->
+            Text(
+                text = char.toString(),
+                color = Color.White,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        // 括弧部分を横並びで表示
+        Text(
+            text = parenPart,
+            color = Color.White,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center
+        )
+
+        // 括弧後の文字を縦に表示
+        afterParen.forEach { char ->
+            Text(
+                text = char.toString(),
+                color = Color.White,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+private fun getJapaneseMonth(month: Int): String {
+    val months = arrayOf("一月", "二月", "三月", "四月", "五月", "六月",
+                        "七月", "八月", "九月", "十月", "十一月", "十二月")
+    return if (month in 1..12) months[month - 1] else "？月"
+}
+
+private fun getJapaneseDayOfWeek(dayOfWeek: Int): String {
+    return when (dayOfWeek) {
+        Calendar.SUNDAY -> "日"
+        Calendar.MONDAY -> "月"
+        Calendar.TUESDAY -> "火"
+        Calendar.WEDNESDAY -> "水"
+        Calendar.THURSDAY -> "木"
+        Calendar.FRIDAY -> "金"
+        Calendar.SATURDAY -> "土"
+        else -> "？"
+    }
+}
+
+private fun getJapaneseNumber(number: Int): String {
+    val ones = arrayOf("", "一", "二", "三", "四", "五", "六", "七", "八", "九")
+    val tens = arrayOf("", "十", "二十", "三十")
+
+    return when {
+        number == 10 -> "十"
+        number < 10 -> ones[number]
+        number < 20 -> "十${ones[number % 10]}"
+        number < 40 -> "${tens[number / 10]}${if (number % 10 != 0) ones[number % 10] else ""}"
+        else -> number.toString()
+    }
 }

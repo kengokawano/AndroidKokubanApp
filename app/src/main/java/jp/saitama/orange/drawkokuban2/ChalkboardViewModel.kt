@@ -3,6 +3,7 @@ package jp.saitama.orange.drawkokuban2
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -133,17 +134,30 @@ class ChalkboardViewModel : ViewModel() {
     }
 
     fun saveBitmap(context: Context, slotNumber: Int? = null): SlotMeta? {
-        val bitmap = state.bitmap ?: return null
+        Log.d("ChalkboardViewModel", "saveBitmap called with slotNumber: $slotNumber")
+        val bitmap = state.bitmap ?: return null.also {
+            Log.e("ChalkboardViewModel", "bitmap is null, cannot save")
+        }
 
         // スロット番号が指定されていない場合は、空きスロットを探す
         val targetSlot = slotNumber ?: findNextAvailableSlot(context)
+        Log.d("ChalkboardViewModel", "Saving to slot: $targetSlot")
 
         val file = File(context.filesDir, "chalkboard_$targetSlot.png")
-        return savePng(bitmap, file)
+        Log.d("ChalkboardViewModel", "File path: ${file.absolutePath}")
+
+        return try {
+            val result = savePng(bitmap, file)
+            Log.d("ChalkboardViewModel", "Save successful: ${file.exists()}, size: ${file.length()}")
+            result
+        } catch (e: Exception) {
+            Log.e("ChalkboardViewModel", "Save failed", e)
+            null
+        }
     }
 
     private fun findNextAvailableSlot(context: Context): Int {
-        for (i in 1..30) {
+        for (i in 1..36) {
             val file = File(context.filesDir, "chalkboard_$i.png")
             if (!file.exists()) {
                 return i

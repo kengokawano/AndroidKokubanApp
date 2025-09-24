@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,28 +46,28 @@ object TimeTableUtils {
     private val dayNames = arrayOf("月", "火", "水", "木", "金", "土")
 
     fun getTimeTableName(slotNumber: Int): String {
-        if (slotNumber < 1 || slotNumber > 30) return "不明"
+        if (slotNumber < 1 || slotNumber > 36) return "不明"
 
-        val dayIndex = (slotNumber - 1) / 5  // 0-5 (月-土)
-        val period = (slotNumber - 1) % 5 + 1  // 1-5時間目
+        val dayIndex = (slotNumber - 1) / 6  // 0-5 (月-土)
+        val period = (slotNumber - 1) % 6 + 1  // 1-6時間目
 
         return "（${dayNames[dayIndex]}）${period}時間目"
     }
 
     fun getShortTimeTableName(slotNumber: Int): String {
-        if (slotNumber < 1 || slotNumber > 30) return "?"
+        if (slotNumber < 1 || slotNumber > 36) return "?"
 
-        val dayIndex = (slotNumber - 1) / 5
-        val period = (slotNumber - 1) % 5 + 1
+        val dayIndex = (slotNumber - 1) / 6
+        val period = (slotNumber - 1) % 6 + 1
 
         return "${dayNames[dayIndex]}${period}"
     }
 
     fun getHeaderTimeTableName(slotNumber: Int): String {
-        if (slotNumber < 1 || slotNumber > 30) return "不明"
+        if (slotNumber < 1 || slotNumber > 36) return "不明"
 
-        val dayIndex = (slotNumber - 1) / 5  // 0-5 (月-土)
-        val period = (slotNumber - 1) % 5 + 1  // 1-5時間目
+        val dayIndex = (slotNumber - 1) / 6  // 0-5 (月-土)
+        val period = (slotNumber - 1) % 6 + 1  // 1-6時間目
 
         return "${dayNames[dayIndex]}曜日　${period}時間目"
     }
@@ -76,16 +77,17 @@ object TimeTableUtils {
 fun FileManagerScreen(
     onFileSelected: (Int) -> Unit,
     onBackPressed: () -> Unit,
-    viewModel: ChalkboardViewModel = viewModel()
+    viewModel: ChalkboardViewModel = viewModel(),
+    refreshTrigger: Int = 0
 ) {
     val context = LocalContext.current
     var slots by remember { mutableStateOf<List<SlotData>>(emptyList()) }
     var showDeleteDialog by remember { mutableStateOf<Int?>(null) }
 
-    // 30個のスロットを初期化（月〜土の1〜5時間目）
-    LaunchedEffect(Unit) {
+    // スロットリストを更新する関数
+    fun updateSlots() {
         val slotList = mutableListOf<SlotData>()
-        for (i in 1..30) {
+        for (i in 1..36) {
             val file = File(context.filesDir, "chalkboard_$i.png")
             val thumbnail = if (file.exists()) {
                 val bitmap = loadPng(file)
@@ -102,6 +104,16 @@ fun FileManagerScreen(
             )
         }
         slots = slotList
+    }
+
+    // 36個のスロットを初期化（月〜土の1〜6時間目）
+    LaunchedEffect(Unit) {
+        updateSlots()
+    }
+
+    // 保存後にファイルリストを更新
+    LaunchedEffect(refreshTrigger) {
+        updateSlots()
     }
 
     Column(
@@ -195,7 +207,7 @@ fun SlotCard(
 ) {
     Card(
         modifier = Modifier
-            .aspectRatio(1f)
+            .aspectRatio(0.8f)
             .combinedClickable(
                 onClick = onTap,
                 onLongClick = onLongPress
@@ -228,44 +240,54 @@ fun SlotCard(
                 }
             } else {
                 // データがあるスロット
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    // サムネイル
-                    Box(
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // サムネイル（全画面）
+                    slot.thumbnail?.let { thumbnail ->
+                        Image(
+                            bitmap = thumbnail.asImageBitmap(),
+                            contentDescription = stringResource(R.string.content_desc_thumbnail),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    } ?: Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(4.dp)
-                            .clip(RoundedCornerShape(4.dp))
+                            .fillMaxSize()
                             .background(Color(0xFF0B2E1A))
-                    ) {
-                        slot.thumbnail?.let { thumbnail ->
-                            Image(
-                                bitmap = thumbnail.asImageBitmap(),
-                                contentDescription = stringResource(R.string.content_desc_thumbnail),
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    }
+                    )
 
-                    // スロット番号と日時
-                    Column(
-                        modifier = Modifier.padding(4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    // スロット名称（左上オーバーレイ）
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(4.dp),
+                        color = Color.Black.copy(alpha = 0.7f),
+                        shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
                             TimeTableUtils.getShortTimeTableName(slot.slotNumber),
                             color = Color.White,
-                            fontSize = 11.sp,
-                            textAlign = TextAlign.Center
+                            fontSize = 10.sp,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                         )
-                        slot.lastModified?.let {
+                    }
+
+                    // 更新日時（右下オーバーレイ）
+                    slot.lastModified?.let {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(4.dp),
+                            color = Color.Black.copy(alpha = 0.7f),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
                             Text(
                                 SimpleDateFormat("MM/dd", Locale.getDefault())
                                     .format(Date(it)),
                                 color = Color.Gray,
-                                fontSize = 10.sp
+                                fontSize = 9.sp,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                             )
                         }
                     }
