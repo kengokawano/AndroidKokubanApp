@@ -78,7 +78,7 @@ class ChalkboardViewModel : ViewModel() {
         )
     }
 
-    fun continueDrawing(point: Offset) {
+    fun continueDrawing(point: Offset, context: Context) {
         if (!state.isDrawing) return
 
         val bitmap = state.bitmap ?: return
@@ -110,7 +110,7 @@ class ChalkboardViewModel : ViewModel() {
                     PenColor.WHITE -> Color.WHITE
                     PenColor.RED -> Color.RED
                 }
-                val thickness = if (state.isThick) 18f else 6f
+                val thickness = getPenThickness(context)
                 drawStroke(bitmap, currentPath.takeLast(2), color, thickness)
             }
 
@@ -179,5 +179,17 @@ class ChalkboardViewModel : ViewModel() {
     fun createThumbnail(maxW: Int = 200, maxH: Int = 150): Bitmap? {
         val bitmap = state.bitmap ?: return null
         return makeThumbnail(bitmap, maxW, maxH)
+    }
+
+    private fun getPenThickness(context: Context): Float {
+        val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+        val thinPenSize = prefs.getFloat("thin_pen_size", 6f)
+        val thickPenSize = prefs.getFloat("thick_pen_size", 18f)
+        return if (state.isThick) thickPenSize else thinPenSize
+    }
+
+    fun updatePenSettings(context: Context) {
+        // 設定値を読み込んで更新する関数（今後実装）
+        // SharedPreferencesから thin_pen_size と thick_pen_size を読み込み
     }
 }

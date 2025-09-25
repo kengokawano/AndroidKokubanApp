@@ -67,6 +67,11 @@ fun AppNavigation() {
         )
     }
 
+    // ペンサイズ設定
+    val prefs = context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+    var thinPenSize by remember { mutableStateOf(prefs.getFloat("thin_pen_size", 6f)) }
+    var thickPenSize by remember { mutableStateOf(prefs.getFloat("thick_pen_size", 18f)) }
+
     // 起動時の初期化
     LaunchedEffect(Unit) {
         // SharedPreferencesから前回開いたスロット番号を取得
@@ -191,6 +196,16 @@ fun AppNavigation() {
                         .putBoolean("show_date_overlay", newValue)
                         .apply()
                 },
+                thinPenSize = thinPenSize,
+                thickPenSize = thickPenSize,
+                onThinPenSizeChanged = { newSize ->
+                    thinPenSize = newSize
+                    prefs.edit().putFloat("thin_pen_size", newSize).apply()
+                },
+                onThickPenSizeChanged = { newSize ->
+                    thickPenSize = newSize
+                    prefs.edit().putFloat("thick_pen_size", newSize).apply()
+                },
                 onDismiss = { showSettings = false }
             )
         }
@@ -221,6 +236,11 @@ fun ChalkboardScreenWithControls(
     var showSettings by remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
 
+    // ペンサイズ設定（ローカル）
+    val prefs = context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+    var thinPenSize by remember { mutableStateOf(prefs.getFloat("thin_pen_size", 6f)) }
+    var thickPenSize by remember { mutableStateOf(prefs.getFloat("thick_pen_size", 18f)) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         // メインの黒板画面
         ChalkboardScreenContent(
@@ -246,22 +266,16 @@ fun ChalkboardScreenWithControls(
         SettingsDialog(
             showDateOverlay = showDateOverlay,
             onDateOverlayChanged = { newValue -> onDateOverlayChanged(newValue) },
-            onDismiss = { showSettings = false }
-        )
-    }
-
-    // Aboutダイアログ
-    if (showAbout) {
-        AboutDialog(
-            onDismiss = { showAbout = false }
-        )
-    }
-
-    // 設定ダイアログ
-    if (showSettings) {
-        SettingsDialog(
-            showDateOverlay = showDateOverlay,
-            onDateOverlayChanged = { newValue -> onDateOverlayChanged(newValue) },
+            thinPenSize = thinPenSize,
+            thickPenSize = thickPenSize,
+            onThinPenSizeChanged = { newSize ->
+                thinPenSize = newSize
+                prefs.edit().putFloat("thin_pen_size", newSize).apply()
+            },
+            onThickPenSizeChanged = { newSize ->
+                thickPenSize = newSize
+                prefs.edit().putFloat("thick_pen_size", newSize).apply()
+            },
             onDismiss = { showSettings = false }
         )
     }
@@ -329,6 +343,16 @@ private fun ChalkboardScreenContent(
                     )
                 }
             },
+            navigationIcon = {
+                // 一覧ボタン（一番左）
+                IconButton(onClick = onNavigateToFileManager) {
+                    Icon(
+                        Icons.Default.List,
+                        contentDescription = stringResource(R.string.action_file_list),
+                        tint = Color.White
+                    )
+                }
+            },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Black
             ),
@@ -363,14 +387,6 @@ private fun ChalkboardScreenContent(
                             tint = Color.White
                         )
                     }
-                    // 一覧ボタン（一番右）
-                    IconButton(onClick = onNavigateToFileManager) {
-                        Icon(
-                            Icons.Default.List,
-                            contentDescription = stringResource(R.string.action_file_list),
-                            tint = Color.White
-                        )
-                    }
                 }
             }
         )
@@ -402,7 +418,7 @@ private fun ChalkboardScreenContent(
                             viewModel.startDrawing(offset)
                         },
                         onDrag = { change, _ ->
-                            viewModel.continueDrawing(change.position)
+                            viewModel.continueDrawing(change.position, context)
                         },
                         onDragEnd = {
                             viewModel.endDrawing()
@@ -558,6 +574,10 @@ private fun getJapaneseNumber(number: Int): String {
 fun SettingsDialog(
     showDateOverlay: Boolean,
     onDateOverlayChanged: (Boolean) -> Unit,
+    thinPenSize: Float,
+    thickPenSize: Float,
+    onThinPenSizeChanged: (Float) -> Unit,
+    onThickPenSizeChanged: (Float) -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -583,9 +603,31 @@ fun SettingsDialog(
                     color = Color.DarkGray
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("• ペンサイズ調整機能（予定）")
+
+                // 細いペンサイズ設定
+                Text("細いペンサイズ: ${thinPenSize.toInt()}")
+                Slider(
+                    value = thinPenSize,
+                    onValueChange = onThinPenSizeChanged,
+                    valueRange = 2f..12f,
+                    steps = 9,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 太いペンサイズ設定
+                Text("太いペンサイズ: ${thickPenSize.toInt()}")
+                Slider(
+                    value = thickPenSize,
+                    onValueChange = onThickPenSizeChanged,
+                    valueRange = 12f..36f,
+                    steps = 23,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
                 Text("• 描画速度調整（予定）")
-                Text("• 筆圧対応（予定）")
 
                 Spacer(modifier = Modifier.height(16.dp))
 

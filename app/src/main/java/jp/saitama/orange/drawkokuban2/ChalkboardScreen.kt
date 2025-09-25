@@ -93,7 +93,7 @@ fun ChalkboardScreen(
                             viewModel.startDrawing(offset)
                         },
                         onDrag = { change, _ ->
-                            viewModel.continueDrawing(change.position)
+                            viewModel.continueDrawing(change.position, context)
                         },
                         onDragEnd = {
                             viewModel.endDrawing()
