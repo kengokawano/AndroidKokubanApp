@@ -7,12 +7,12 @@
     <string name="tool_thin">細</string>
     <string name="tool_thick">太</string>
     <string name="tool_eraser">消し</string>
-    <string name="tool_clear_all">全消し</string>
+    <string name="tool_clear_all">黒板係さん消しといて</string>
 
     <!-- アクションボタン -->
     <string name="action_new">新規作成</string>
     <string name="action_save">保存</string>
-    <string name="action_file_list">ファイル一覧</string>
+    <string name="action_file_list">連 絡 帳</string>
     <string name="action_back">戻る</string>
 
     <!-- ダイアログ -->
@@ -27,15 +27,19 @@
     <string name="dialog_delete">削除</string>
 
     <!-- ファイル管理 -->
-    <string name="file_manager_title">ファイル一覧</string>
+    <string name="file_manager_title">連絡帳</string>
     <string name="file_empty_message">保存されたファイルがありません</string>
     <string name="file_create_new">新しい黒板を作成</string>
-    <string name="file_slot_number">スロット %1$d</string>
+    <string name="file_slot_number">空き %1$d</string>
     <string name="file_empty_slot">空き</string>
 
     <!-- モード表示 -->
     <string name="mode_new">新規作成</string>
-    <string name="mode_edit_slot">スロット %1$d</string>
+    <string name="mode_edit_slot">空き %1$d</string>
+
+    <!-- エクスポートメッセージ -->
+    <string name="export_success">この連絡を連絡帳に保存しました</string>
+    <string name="export_failed">保存に失敗しました</string>
 
     <!-- コンテンツ説明 -->
     <string name="content_desc_chalkboard">黒板</string>

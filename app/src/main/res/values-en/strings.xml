@@ -7,12 +7,12 @@
     <string name="tool_thin">Thin</string>
     <string name="tool_thick">Thick</string>
     <string name="tool_eraser">Erase</string>
-    <string name="tool_clear_all">Clear All</string>
+    <string name="tool_clear_all">Hey, board monitor, erase it please</string>
 
     <!-- Action Buttons -->
     <string name="action_new">New</string>
     <string name="action_save">Save</string>
-    <string name="action_file_list">File List</string>
+    <string name="action_file_list">Communication book</string>
     <string name="action_back">Back</string>
 
     <!-- Dialogs -->
@@ -27,7 +27,7 @@
     <string name="dialog_delete">Delete</string>
 
     <!-- File Management -->
-    <string name="file_manager_title">File List</string>
+    <string name="file_manager_title">Communication book</string>
     <string name="file_empty_message">No saved files</string>
     <string name="file_create_new">Create new chalkboard</string>
     <string name="file_slot_number">Slot %1$d</string>
@@ -36,6 +36,10 @@
     <!-- Mode Display -->
     <string name="mode_new">New</string>
     <string name="mode_edit_slot">Slot %1$d</string>
+
+    <!-- Export Messages -->
+    <string name="export_success">This communication saved to communication book</string>
+    <string name="export_failed">Save failed</string>
 
     <!-- Content Descriptions -->
     <string name="content_desc_chalkboard">Chalkboard</string>

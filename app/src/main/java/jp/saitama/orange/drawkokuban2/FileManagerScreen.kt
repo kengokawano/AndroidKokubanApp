@@ -96,7 +96,7 @@ fun FileManagerScreen(
             val file = File(context.filesDir, "chalkboard_$i.png")
             val thumbnail = if (file.exists()) {
                 val bitmap = loadPng(file)
-                bitmap?.let { makeThumbnail(it, 200, 150) }
+                bitmap?.let { makeThumbnail(it, 300, 225) }
             } else null
 
             slotList.add(
@@ -147,11 +147,11 @@ fun FileManagerScreen(
 
         // スロット一覧
         LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
+            columns = GridCells.Fixed(2),
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(slots) { slot ->
                 SlotCard(
@@ -218,7 +218,7 @@ fun SlotCard(
 ) {
     Card(
         modifier = Modifier
-            .aspectRatio(0.8f)
+            .aspectRatio(1.2f)
             .combinedClickable(
                 onClick = onTap,
                 onLongClick = onLongPress
@@ -239,7 +239,7 @@ fun SlotCard(
                     Text(
                         "空き${slot.slotNumber}",
                         color = Color.Gray,
-                        fontSize = 12.sp,
+                        fontSize = 16.sp,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -254,7 +254,7 @@ fun SlotCard(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop
+                            contentScale = ContentScale.FillBounds
                         )
                     } ?: Box(
                         modifier = Modifier
@@ -275,8 +275,8 @@ fun SlotCard(
                                 DateTimeSlotUtils.getShortSlotName(slot.slotNumber, it)
                             } ?: "空き${slot.slotNumber}",
                             color = Color.White,
-                            fontSize = 10.sp,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                         )
                     }
 
@@ -293,8 +293,8 @@ fun SlotCard(
                                 SimpleDateFormat("HH:mm", Locale.getDefault())
                                     .format(Date(it)),
                                 color = Color.Gray,
-                                fontSize = 9.sp,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                             )
                         }
                     }

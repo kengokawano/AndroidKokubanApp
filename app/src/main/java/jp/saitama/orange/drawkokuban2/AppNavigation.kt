@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Save
@@ -71,6 +72,8 @@ fun AppNavigation() {
     val prefs = context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
     var thinPenSize by remember { mutableStateOf(prefs.getFloat("thin_pen_size", 6f)) }
     var thickPenSize by remember { mutableStateOf(prefs.getFloat("thick_pen_size", 18f)) }
+    var eraserRadius by remember { mutableStateOf(prefs.getFloat("eraser_radius", 48f)) }
+    var exportWithBackground by remember { mutableStateOf(prefs.getBoolean("export_with_background", true)) }
 
     // 起動時の初期化
     LaunchedEffect(Unit) {
@@ -103,7 +106,7 @@ fun AppNavigation() {
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet(
-                modifier = Modifier.width(320.dp)
+                modifier = Modifier.width(400.dp)
             ) {
                 FileManagerScreen(
                     onFileSelected = { slotNumber ->
@@ -172,6 +175,20 @@ fun AppNavigation() {
                 },
                 onShowSettings = { showSettings = true },
                 onShowAbout = { showAbout = true },
+                onExport = {
+                    val success = viewModel.exportToPng(context)
+                    scope.launch {
+                        val message = if (success) {
+                            context.getString(R.string.export_success)
+                        } else {
+                            context.getString(R.string.export_failed)
+                        }
+                        snackbarHostState.showSnackbar(
+                            message = message,
+                            duration = SnackbarDuration.Short
+                        )
+                    }
+                },
                 showDateOverlay = showDateOverlay,
                 onDateOverlayChanged = { newValue ->
                     showDateOverlay = newValue
@@ -206,6 +223,16 @@ fun AppNavigation() {
                     thickPenSize = newSize
                     prefs.edit().putFloat("thick_pen_size", newSize).apply()
                 },
+                eraserRadius = eraserRadius,
+                onEraserRadiusChanged = { newRadius ->
+                    eraserRadius = newRadius
+                    prefs.edit().putFloat("eraser_radius", newRadius).apply()
+                },
+                exportWithBackground = exportWithBackground,
+                onExportWithBackgroundChanged = { newValue ->
+                    exportWithBackground = newValue
+                    prefs.edit().putBoolean("export_with_background", newValue).apply()
+                },
                 onDismiss = { showSettings = false }
             )
         }
@@ -229,6 +256,7 @@ fun ChalkboardScreenWithControls(
     onSave: () -> Unit,
     onShowSettings: () -> Unit,
     onShowAbout: () -> Unit,
+    onExport: () -> Unit,
     showDateOverlay: Boolean,
     onDateOverlayChanged: (Boolean) -> Unit
 ) {
@@ -240,6 +268,8 @@ fun ChalkboardScreenWithControls(
     val prefs = context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
     var thinPenSize by remember { mutableStateOf(prefs.getFloat("thin_pen_size", 6f)) }
     var thickPenSize by remember { mutableStateOf(prefs.getFloat("thick_pen_size", 18f)) }
+    var eraserRadius by remember { mutableStateOf(prefs.getFloat("eraser_radius", 48f)) }
+    var exportWithBackground by remember { mutableStateOf(prefs.getBoolean("export_with_background", true)) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // メインの黒板画面
@@ -251,6 +281,7 @@ fun ChalkboardScreenWithControls(
             currentSlot = currentSlot,
             onShowSettings = { showSettings = true },
             onShowAbout = { showAbout = true },
+            onExport = onExport,
             showDateOverlay = showDateOverlay
         )
 
@@ -276,6 +307,16 @@ fun ChalkboardScreenWithControls(
                 thickPenSize = newSize
                 prefs.edit().putFloat("thick_pen_size", newSize).apply()
             },
+            eraserRadius = eraserRadius,
+            onEraserRadiusChanged = { newRadius ->
+                eraserRadius = newRadius
+                prefs.edit().putFloat("eraser_radius", newRadius).apply()
+            },
+            exportWithBackground = exportWithBackground,
+            onExportWithBackgroundChanged = { newValue ->
+                exportWithBackground = newValue
+                prefs.edit().putBoolean("export_with_background", newValue).apply()
+            },
             onDismiss = { showSettings = false }
         )
     }
@@ -299,6 +340,7 @@ private fun ChalkboardScreenContent(
     currentSlot: Int?,
     onShowSettings: () -> Unit,
     onShowAbout: () -> Unit,
+    onExport: () -> Unit,
     showDateOverlay: Boolean
 ) {
     val context = LocalContext.current
@@ -322,16 +364,18 @@ private fun ChalkboardScreenContent(
                         Text(
                             headerText,
                             color = Color.White,
-                            fontSize = 20.sp,
+                            fontSize = 16.sp,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.graphicsLayer(scaleX = 0.8f)
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier
                         )
                     } ?: Text(
                         stringResource(R.string.app_name),
                         color = Color.White,
                         fontSize = 20.sp,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.graphicsLayer(scaleX = 0.8f)
+                        modifier = Modifier.graphicsLayer(scaleX = 0.7f)
                     )
                 } else {
                     Text(
@@ -339,7 +383,7 @@ private fun ChalkboardScreenContent(
                         color = Color.White,
                         fontSize = 20.sp,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.graphicsLayer(scaleX = 0.8f)
+                        modifier = Modifier.graphicsLayer(scaleX = 0.7f)
                     )
                 }
             },
@@ -358,8 +402,11 @@ private fun ChalkboardScreenContent(
             ),
             actions = {
                 Row {
-                    // Aboutボタン
-                    IconButton(onClick = onShowAbout) {
+                    // Aboutボタン（右寄せ）
+                    IconButton(
+                        onClick = onShowAbout,
+                        modifier = Modifier.offset(x = 8.dp)
+                    ) {
                         Icon(
                             Icons.Default.Info,
                             contentDescription = "About",
@@ -369,11 +416,22 @@ private fun ChalkboardScreenContent(
                     // 設定ボタン（Aboutと詰める）
                     IconButton(
                         onClick = onShowSettings,
-                        modifier = Modifier.offset(x = (-8).dp)
+                        modifier = Modifier.offset(x = 4.dp)
                     ) {
                         Icon(
                             Icons.Default.Settings,
                             contentDescription = "Settings",
+                            tint = Color.White
+                        )
+                    }
+                    // PNG Exportボタン
+                    IconButton(
+                        onClick = onExport,
+                        modifier = Modifier.offset(x = 0.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.FileDownload,
+                            contentDescription = "PNG Export",
                             tint = Color.White
                         )
                     }
@@ -578,6 +636,10 @@ fun SettingsDialog(
     thickPenSize: Float,
     onThinPenSizeChanged: (Float) -> Unit,
     onThickPenSizeChanged: (Float) -> Unit,
+    eraserRadius: Float,
+    onEraserRadiusChanged: (Float) -> Unit,
+    exportWithBackground: Boolean,
+    onExportWithBackgroundChanged: (Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -626,8 +688,19 @@ fun SettingsDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 黒板消しサイズ設定
+                Text("黒板消しの円の広さ: ${eraserRadius.toInt()}")
+                Slider(
+                    value = eraserRadius,
+                    onValueChange = onEraserRadiusChanged,
+                    valueRange = 24f..96f,
+                    steps = 35,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("• 描画速度調整（予定）")
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -637,6 +710,7 @@ fun SettingsDialog(
                     fontSize = 16.sp,
                     color = Color.DarkGray
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // 日付表示切り替え
@@ -665,9 +739,29 @@ fun SettingsDialog(
                     color = Color.DarkGray
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+
+                // Export時の背景設定
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("PNG Export時の背景")
+                    Switch(
+                        checked = exportWithBackground,
+                        onCheckedChange = onExportWithBackgroundChanged
+                    )
+                }
+                Text(
+                    text = if (exportWithBackground) "緑の背景色でエクスポート" else "透明な背景でエクスポート",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
                 Text("• 自動保存機能（予定）")
                 Text("• バックアップ機能（予定）")
-                Text("• エクスポート機能（予定）")
+
             }
         },
         confirmButton = {
