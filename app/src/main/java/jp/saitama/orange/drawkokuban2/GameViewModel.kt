@@ -393,11 +393,30 @@ class GameViewModel : ViewModel() {
         val cpuCellState = if (gameState.playerIsWhite) CellState.RED else CellState.WHITE
         val playerCellState = if (gameState.playerIsWhite) CellState.WHITE else CellState.RED
 
-        // 各手の評価スコアを計算
+        // 1. 自分が勝てる手があるかチェック
+        for ((row, col) in validMoves) {
+            val testBoard = gameState.board.map { it.clone() }.toTypedArray()
+            testBoard[row][col] = cpuCellState
+            if (checkWinner(testBoard, row, col, cpuCellState) != null) {
+                return Pair(row, col) // 勝ち手
+            }
+        }
+
+        // 2. プレイヤーの勝ちを阻止する手があるかチェック
+        for ((row, col) in validMoves) {
+            val testBoard = gameState.board.map { it.clone() }.toTypedArray()
+            testBoard[row][col] = playerCellState
+            if (checkWinner(testBoard, row, col, playerCellState) != null) {
+                return Pair(row, col) // プレイヤーの勝ちを阻止
+            }
+        }
+
+        // 3. 上記以外の場合、評価関数を用いて最適な手を探す
         var bestMove: Pair<Int, Int>? = null
         var bestScore = Int.MIN_VALUE
 
         for ((row, col) in validMoves) {
+            // evaluateMoveのdepthは2に設定し、計算負荷を考慮
             val score = evaluateMove(row, col, cpuCellState, playerCellState, 2)
             if (score > bestScore) {
                 bestScore = score
@@ -409,52 +428,31 @@ class GameViewModel : ViewModel() {
     }
 
     private fun evaluateMove(row: Int, col: Int, cpuCellState: CellState, playerCellState: CellState, depth: Int): Int {
-        // 現在の盤面をコピー
-        val testBoard = gameState.board.map { it.clone() }.toTypedArray()
-        testBoard[row][col] = cpuCellState
-
-        // 即勝利なら最高スコア
-        if (checkWinner(testBoard, row, col, cpuCellState) != null) {
-            return 1000
-        }
-
         var score = 0
 
-        // 基本スコア: 中央寄りを好む
+        // --- 守備的評価 --- 
+        // 相手がここに置くとリーチになるかをテストし、それを阻止する手に高いスコアを与える
+        val opponentTestBoard = gameState.board.map { it.clone() }.toTypedArray()
+        opponentTestBoard[row][col] = playerCellState
+        if (countConnections(opponentTestBoard, row, col, playerCellState) == 3) {
+            score += 5000 // 相手のリーチ阻止を最優先
+        }
+
+        // --- 攻撃的評価 ---
+        // 自分がここに置くとリーチになるかをテストし、その手に高いスコアを与える
+        val cpuTestBoard = gameState.board.map { it.clone() }.toTypedArray()
+        cpuTestBoard[row][col] = cpuCellState
+        if (countConnections(cpuTestBoard, row, col, cpuCellState) == 3) {
+            score += 4000 // 自分のリーチ作成を次点で優先
+        }
+
+        // --- 基本評価 ---
+        // 中央に近いほど評価を少し上げる
         val centerDistance = kotlin.math.abs(row - 5.5) + kotlin.math.abs(col - 5.5)
-        score += (12 - centerDistance.toInt()) * 2
+        score += (12 - centerDistance.toInt()) * 10
 
-        // 連続する自分のブロック数をカウント
-        score += countConnections(testBoard, row, col, cpuCellState) * 10
-
-        // プレイヤーの危険な手を阻止
-        val validPlayerMoves = getValidMovesForBoard(testBoard)
-        for ((pRow, pCol) in validPlayerMoves) {
-            val playerTestBoard = testBoard.map { it.clone() }.toTypedArray()
-            playerTestBoard[pRow][pCol] = playerCellState
-
-            if (checkWinner(playerTestBoard, pRow, pCol, playerCellState) != null) {
-                score += 500 // 相手の勝ちを阻止する価値
-            }
-
-            // 相手の連続も評価
-            val playerConnections = countConnections(playerTestBoard, pRow, pCol, playerCellState)
-            if (playerConnections >= 3) {
-                score += 200 // 相手の3つ並びを阻止
-            }
-        }
-
-        // 2手先読み（簡易版）
-        if (depth > 0) {
-            var maxFutureScore = Int.MIN_VALUE
-            for ((nextRow, nextCol) in validPlayerMoves.take(5)) { // 計算量制限
-                val futureScore = -evaluateMove(nextRow, nextCol, playerCellState, cpuCellState, depth - 1)
-                maxFutureScore = kotlin.math.max(maxFutureScore, futureScore)
-            }
-            if (maxFutureScore != Int.MIN_VALUE) {
-                score += maxFutureScore / 4 // 将来スコアの重み付け
-            }
-        }
+        // 自分の接続数を評価（2つ繋がりなど）
+        score += countConnections(cpuTestBoard, row, col, cpuCellState) * 20
 
         return score
     }
