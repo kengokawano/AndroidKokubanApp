@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,19 +22,36 @@ class GameActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MyApplicationTheme {
-                GameScreen()
+                GameScreen(
+                    onClose = { finish() }
+                )
             }
         }
     }
 }
 
 @Composable
-fun GameScreen() {
+fun GameScreen(onClose: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF0B2E1A))
     ) {
+        // 右上のバツボタン
+        IconButton(
+            onClick = onClose,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        ) {
+            Icon(
+                Icons.Default.Close,
+                contentDescription = "閉じる",
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
