@@ -144,6 +144,7 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
                             CpuDifficulty.EASY -> "EASY"
                             CpuDifficulty.NORMAL -> "NORMAL"
                             CpuDifficulty.HARD -> "HARD"
+                            CpuDifficulty.EXPERT -> "EXPERT"
                         }
                     }",
                     color = Color.White,

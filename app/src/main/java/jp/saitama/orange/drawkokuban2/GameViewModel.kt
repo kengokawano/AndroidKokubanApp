@@ -27,7 +27,8 @@ enum class GameMode {
 enum class CpuDifficulty {
     EASY,
     NORMAL,
-    HARD
+    HARD,
+    EXPERT  // 2手先読み
 }
 
 data class GameState(
@@ -248,6 +249,7 @@ class GameViewModel : ViewModel() {
             CpuDifficulty.EASY -> getRandomMove(validMoves)
             CpuDifficulty.NORMAL -> getNormalMove(validMoves)
             CpuDifficulty.HARD -> getHardMove(validMoves)
+            CpuDifficulty.EXPERT -> getExpertMove(validMoves)
         }
 
         move?.let { (row, col) ->
@@ -340,6 +342,155 @@ class GameViewModel : ViewModel() {
 
         // 3. 勝ちも阻止もなければランダム
         return getRandomMove(validMoves)
+    }
+
+    private fun getExpertMove(validMoves: List<Pair<Int, Int>>): Pair<Int, Int>? {
+        val cpuCellState = if (gameState.playerIsWhite) CellState.RED else CellState.WHITE
+        val playerCellState = if (gameState.playerIsWhite) CellState.WHITE else CellState.RED
+
+        // 各手の評価スコアを計算
+        var bestMove: Pair<Int, Int>? = null
+        var bestScore = Int.MIN_VALUE
+
+        for ((row, col) in validMoves) {
+            val score = evaluateMove(row, col, cpuCellState, playerCellState, 2)
+            if (score > bestScore) {
+                bestScore = score
+                bestMove = Pair(row, col)
+            }
+        }
+
+        return bestMove ?: getRandomMove(validMoves)
+    }
+
+    private fun evaluateMove(row: Int, col: Int, cpuCellState: CellState, playerCellState: CellState, depth: Int): Int {
+        // 現在の盤面をコピー
+        val testBoard = gameState.board.map { it.clone() }.toTypedArray()
+        testBoard[row][col] = cpuCellState
+
+        // 即勝利なら最高スコア
+        if (checkWinner(testBoard, row, col, cpuCellState) != null) {
+            return 1000
+        }
+
+        var score = 0
+
+        // 基本スコア: 中央寄りを好む
+        val centerDistance = kotlin.math.abs(row - 5.5) + kotlin.math.abs(col - 5.5)
+        score += (12 - centerDistance.toInt()) * 2
+
+        // 連続する自分のブロック数をカウント
+        score += countConnections(testBoard, row, col, cpuCellState) * 10
+
+        // プレイヤーの危険な手を阻止
+        val validPlayerMoves = getValidMovesForBoard(testBoard)
+        for ((pRow, pCol) in validPlayerMoves) {
+            val playerTestBoard = testBoard.map { it.clone() }.toTypedArray()
+            playerTestBoard[pRow][pCol] = playerCellState
+
+            if (checkWinner(playerTestBoard, pRow, pCol, playerCellState) != null) {
+                score += 500 // 相手の勝ちを阻止する価値
+            }
+
+            // 相手の連続も評価
+            val playerConnections = countConnections(playerTestBoard, pRow, pCol, playerCellState)
+            if (playerConnections >= 3) {
+                score += 200 // 相手の3つ並びを阻止
+            }
+        }
+
+        // 2手先読み（簡易版）
+        if (depth > 0) {
+            var maxFutureScore = Int.MIN_VALUE
+            for ((nextRow, nextCol) in validPlayerMoves.take(5)) { // 計算量制限
+                val futureScore = -evaluateMove(nextRow, nextCol, playerCellState, cpuCellState, depth - 1)
+                maxFutureScore = kotlin.math.max(maxFutureScore, futureScore)
+            }
+            if (maxFutureScore != Int.MIN_VALUE) {
+                score += maxFutureScore / 4 // 将来スコアの重み付け
+            }
+        }
+
+        return score
+    }
+
+    private fun countConnections(board: Array<Array<CellState>>, row: Int, col: Int, cellState: CellState): Int {
+        val directions = listOf(
+            Pair(0, 1),   // 横
+            Pair(1, 0),   // 縦
+            Pair(1, 1),   // 右下斜め
+            Pair(1, -1)   // 左下斜め
+        )
+
+        var maxConnection = 0
+
+        for ((dRow, dCol) in directions) {
+            var count = 1 // 配置したセル自体をカウント
+
+            // 正方向にチェック
+            var r = row + dRow
+            var c = col + dCol
+            while (r in 0..11 && c in 0..11 && board[r][c] == cellState) {
+                count++
+                r += dRow
+                c += dCol
+            }
+
+            // 逆方向にチェック
+            r = row - dRow
+            c = col - dCol
+            while (r in 0..11 && c in 0..11 && board[r][c] == cellState) {
+                count++
+                r -= dRow
+                c -= dCol
+            }
+
+            maxConnection = kotlin.math.max(maxConnection, count)
+        }
+
+        return maxConnection
+    }
+
+    private fun getValidMovesForBoard(board: Array<Array<CellState>>): List<Pair<Int, Int>> {
+        val validMoves = mutableListOf<Pair<Int, Int>>()
+        for (row in 0..11) {
+            for (col in 0..11) {
+                if (board[row][col] == CellState.EMPTY && isValidPlacementForBoard(board, row, col)) {
+                    validMoves.add(Pair(row, col))
+                }
+            }
+        }
+        return validMoves
+    }
+
+    private fun isValidPlacementForBoard(board: Array<Array<CellState>>, row: Int, col: Int): Boolean {
+        // 物理法則：最下段または既存ブロックの上でなければならない
+        if (row != 11 && board[row + 1][col] == CellState.EMPTY) {
+            return false
+        }
+
+        // 初手（盤面が空）なら最下段のどこでも可
+        val isEmpty = board.all { row -> row.all { it == CellState.EMPTY } }
+        if (isEmpty) {
+            return row == 11  // 最下段のみ
+        }
+
+        // 隣接ルール：8方向のいずれかに既存ブロックが必要
+        val directions = listOf(
+            Pair(-1, -1), Pair(-1, 0), Pair(-1, 1),
+            Pair(0, -1),               Pair(0, 1),
+            Pair(1, -1),  Pair(1, 0),  Pair(1, 1)
+        )
+
+        for ((dRow, dCol) in directions) {
+            val newRow = row + dRow
+            val newCol = col + dCol
+            if (newRow in 0..11 && newCol in 0..11 && board[newRow][newCol] != CellState.EMPTY) {
+                return true
+            }
+        }
+
+        return false
     }
 
     fun resetGame() {
