@@ -1,5 +1,6 @@
 package jp.saitama.orange.drawkokuban2
 
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -240,7 +241,12 @@ fun AppNavigation() {
         // Aboutダイアログ
         if (showAbout) {
             AboutDialog(
-                onDismiss = { showAbout = false }
+                onDismiss = { showAbout = false },
+                onGameStart = {
+                    val intent = Intent(context, GameActivity::class.java)
+                    context.startActivity(intent)
+                    showAbout = false
+                }
             )
         }
     }
@@ -324,7 +330,12 @@ fun ChalkboardScreenWithControls(
     // Aboutダイアログ
     if (showAbout) {
         AboutDialog(
-            onDismiss = { showAbout = false }
+            onDismiss = { showAbout = false },
+            onGameStart = {
+                val intent = Intent(context, GameActivity::class.java)
+                context.startActivity(intent)
+                showAbout = false
+            }
         )
     }
 
@@ -773,7 +784,10 @@ fun SettingsDialog(
 }
 
 @Composable
-fun AboutDialog(onDismiss: () -> Unit) {
+fun AboutDialog(
+    onDismiss: () -> Unit,
+    onGameStart: () -> Unit = {}
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -811,6 +825,23 @@ fun AboutDialog(onDismiss: () -> Unit) {
                     "デジタル黒板描画アプリケーション",
                     fontSize = 16.sp
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 隠しゲーム起動ボタン
+                Button(
+                    onClick = onGameStart,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF0B2E1A)
+                    )
+                ) {
+                    Text(
+                        "黒板大将",
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // バージョン情報
