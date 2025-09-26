@@ -75,7 +75,67 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
                 color = Color.White
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ゲームモード選択（初期画面でのみ表示）
+            if (gameViewModel.gameState.board.all { row -> row.all { it == CellState.EMPTY } }) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            gameViewModel.startSinglePlayerGame()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (gameViewModel.gameState.gameMode == GameMode.SINGLE_PLAYER) Color.White else Color.Gray
+                        )
+                    ) {
+                        Text(
+                            "一人モード",
+                            color = Color.Black,
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            gameViewModel.startCpuGame()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (gameViewModel.gameState.gameMode == GameMode.VS_CPU) Color.White else Color.Gray
+                        )
+                    ) {
+                        Text(
+                            "CPU対戦",
+                            color = Color.Black,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // CPU対戦モード時の情報表示
+            if (gameViewModel.gameState.gameMode == GameMode.VS_CPU) {
+                Text(
+                    text = "難易度: ${
+                        when (gameViewModel.gameState.cpuDifficulty) {
+                            CpuDifficulty.EASY -> "EASY"
+                            CpuDifficulty.NORMAL -> "NORMAL"
+                            CpuDifficulty.HARD -> "HARD"
+                        }
+                    }",
+                    color = Color.White,
+                    fontSize = 12.sp
+                )
+                Text(
+                    text = "あなた: ${if (gameViewModel.gameState.playerIsWhite) "白（先攻）" else "赤（後攻）"}",
+                    color = Color.White,
+                    fontSize = 12.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             // ゲーム盤面（画面の大部分を使用）
             GameBoard(
@@ -88,11 +148,31 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "四目並べゲーム",
-                fontSize = 14.sp,
-                color = Color.White
-            )
+            // 現在の状況表示
+            if (gameViewModel.gameState.isWaitingForCpu) {
+                Text(
+                    text = "CPUが思考中...",
+                    fontSize = 16.sp,
+                    color = Color.Yellow
+                )
+            } else if (gameViewModel.gameState.gameMode == GameMode.VS_CPU && !gameViewModel.gameState.isGameOver) {
+                val currentPlayerText = if (gameViewModel.gameState.currentPlayer == Player.WHITE) {
+                    if (gameViewModel.gameState.playerIsWhite) "あなたのターン（白）" else "CPUのターン（白）"
+                } else {
+                    if (!gameViewModel.gameState.playerIsWhite) "あなたのターン（赤）" else "CPUのターン（赤）"
+                }
+                Text(
+                    text = currentPlayerText,
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
+            } else {
+                Text(
+                    text = "四目並べゲーム",
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
+            }
 
             // 勝利表示
             if (gameViewModel.gameState.isGameOver && gameViewModel.gameState.winner != null) {
