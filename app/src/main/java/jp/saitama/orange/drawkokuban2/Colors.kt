@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.Color
  */
 object AppColors {
     // 赤色（手書き・ゲーム共通）
-    val RED = Color(247, 171, 173)
+    val RED = Color(255, 157, 168)
 
     // その他の色（今後追加予定）
     val WHITE = Color.White
@@ -19,7 +19,7 @@ object AppColors {
     val WINNING_RED = RED.copy(alpha = 0.8f) // 少し透明にした赤
 
     // UI用の色
-    val VALID_MOVE_HIGHLIGHT = Color(0x40FFFF00) // 薄い黄色
+        val VALID_MOVE_HIGHLIGHT = Color(0x20FFFF00) // 薄い黄色
     val GRID_LINE = Color(0x40FFFFFF) // 薄い白
     val BOTTOM_LINE_HIGHLIGHT = Color(0xFFFFFFFF) // 完全な白
 }

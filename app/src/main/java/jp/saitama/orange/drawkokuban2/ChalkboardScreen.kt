@@ -115,7 +115,7 @@ fun ChalkboardScreen(
         if (viewModel.state.showClearAllDialog) {
             AlertDialog(
                 onDismissRequest = { viewModel.hideClearAllDialog() },
-                title = { Text(stringResource(R.string.dialog_clear_all_title)) },
+                                title = { Text(stringResource(R.string.tool_clear_all)) },
                 text = { Text(stringResource(R.string.dialog_clear_all_message)) },
                 confirmButton = {
                     TextButton(

@@ -157,13 +157,12 @@ fun AppNavigation() {
                             // 保存成功時にSnackbarを表示
                             scope.launch {
                                 val job = launch {
-                                    val slotName = DateTimeSlotUtils.getSlotName(slot, System.currentTimeMillis())
-                                    snackbarHostState.showSnackbar(
-                                        message = "${slotName}に保存しました",
+                                                                        snackbarHostState.showSnackbar(
+                                        message = "【空き ${slot}】 に保存しました",
                                         duration = SnackbarDuration.Indefinite
                                     )
                                 }
-                                delay(1000) // 1秒後に消す
+                                delay(2000) // 1秒後に消す
                                 snackbarHostState.currentSnackbarData?.dismiss()
                             }
                             // 保存時に最後に開いたスロットを記録
@@ -542,7 +541,7 @@ private fun ChalkboardScreenContent(
         if (viewModel.state.showClearAllDialog) {
             AlertDialog(
                 onDismissRequest = { viewModel.hideClearAllDialog() },
-                title = { Text(stringResource(R.string.dialog_clear_all_title)) },
+                title = { Text(stringResource(R.string.tool_clear_all)) },
                 text = { Text(stringResource(R.string.dialog_clear_all_message)) },
                 confirmButton = {
                     TextButton(
