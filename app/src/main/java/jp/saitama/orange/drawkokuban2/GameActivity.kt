@@ -295,8 +295,8 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
                 // 配置済みブロックの描画
                 if (cellState != CellState.EMPTY) {
                     val baseColor = when (cellState) {
-                        CellState.WHITE -> Color.White
-                        CellState.RED -> Color.Red
+                        CellState.WHITE -> AppColors.WHITE
+                        CellState.RED -> AppColors.RED
                         else -> Color.Transparent
                     }
 
@@ -305,8 +305,8 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
                     val color = if (isWinningCell) {
                         // 勝利ラインは明るく光らせる
                         when (cellState) {
-                            CellState.WHITE -> Color(0xFFFFFFAA) // 黄色がかった白
-                            CellState.RED -> Color(0xFFFF6666) // 明るい赤
+                            CellState.WHITE -> AppColors.WINNING_WHITE
+                            CellState.RED -> AppColors.WINNING_RED
                             else -> baseColor
                         }
                     } else {
@@ -341,7 +341,7 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
 
                     if (isPlayerTurn) {
                         drawRect(
-                            color = Color(0x40FFFF00), // 薄い黄色
+                            color = AppColors.VALID_MOVE_HIGHLIGHT,
                             topLeft = Offset(col * cellSize, row * cellSize),
                             size = Size(cellSize, cellSize)
                         )
@@ -367,18 +367,15 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
         // 横線
         for (i in 0..12) {
             val y = i * cellSize
-            val lineColor = if (i == 11) {
-                // 最下段の上の線（row=11の上境界）を強調
-                Color(0x80FFFFFF) // より明るい白
-            } else if (i == 12) {
-                // 最下段の下の線（一番下の境界）を最も強調
+            val lineColor = if (i == 12) {
+                // 一番下の境界線のみ強調
                 Color(0xFFFFFFFF) // 完全な白
             } else {
                 gridColor
             }
 
-            val strokeWidth = if (i == 11 || i == 12) {
-                1.5.dp.toPx() // 最下段周辺は太く
+            val strokeWidth = if (i == 12) {
+                2.0.dp.toPx() // 一番下のラインを太く
             } else {
                 0.5.dp.toPx()
             }
