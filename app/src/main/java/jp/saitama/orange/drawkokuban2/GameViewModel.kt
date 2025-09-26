@@ -40,7 +40,10 @@ data class GameState(
     val cpuDifficulty: CpuDifficulty = CpuDifficulty.EASY,
     val playerIsWhite: Boolean = true, // プレイヤーが白（先攻）かどうか
     val isWaitingForCpu: Boolean = false,
-    val playerWinStreak: Int = 0 // プレイヤーの連勝数（CPU対戦時のみ）
+    val playerWinStreak: Int = 0, // プレイヤーの連勝数（CPU対戦時のみ）
+    val isDraw: Boolean = false, // 引き分けフラグ
+    val winningLine: List<Pair<Int, Int>> = emptyList(), // 勝利ライン座標
+    val validMoves: List<Pair<Int, Int>> = emptyList() // 配置可能位置
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -57,6 +60,9 @@ data class GameState(
         if (playerIsWhite != other.playerIsWhite) return false
         if (isWaitingForCpu != other.isWaitingForCpu) return false
         if (playerWinStreak != other.playerWinStreak) return false
+        if (isDraw != other.isDraw) return false
+        if (winningLine != other.winningLine) return false
+        if (validMoves != other.validMoves) return false
 
         return true
     }
@@ -71,6 +77,9 @@ data class GameState(
         result = 31 * result + playerIsWhite.hashCode()
         result = 31 * result + isWaitingForCpu.hashCode()
         result = 31 * result + playerWinStreak.hashCode()
+        result = 31 * result + isDraw.hashCode()
+        result = 31 * result + winningLine.hashCode()
+        result = 31 * result + validMoves.hashCode()
         return result
     }
 }
@@ -103,8 +112,11 @@ class GameViewModel : ViewModel() {
         val cellState = if (gameState.currentPlayer == Player.WHITE) CellState.WHITE else CellState.RED
         newBoard[row][col] = cellState
 
-        // 勝利判定
-        val winner = checkWinner(newBoard, row, col, cellState)
+        // 勝利判定と勝利ライン取得
+        val (winner, winningLine) = checkWinnerWithLine(newBoard, row, col, cellState)
+
+        // 引き分け判定（全マス埋まりかつ勝者なし）
+        val isDraw = winner == null && newBoard.all { row -> row.all { it != CellState.EMPTY } }
 
         // 連勝数の更新（CPU対戦時のみ）
         var newWinStreak = gameState.playerWinStreak
@@ -118,12 +130,22 @@ class GameViewModel : ViewModel() {
             }
         }
 
+        // 有効な手を更新
+        val newValidMoves = if (!isDraw && winner == null) {
+            getValidMovesForBoard(newBoard)
+        } else {
+            emptyList()
+        }
+
         gameState = gameState.copy(
             board = newBoard,
             currentPlayer = if (gameState.currentPlayer == Player.WHITE) Player.RED else Player.WHITE,
             winner = winner,
-            isGameOver = winner != null,
-            playerWinStreak = newWinStreak
+            isGameOver = winner != null || isDraw,
+            playerWinStreak = newWinStreak,
+            isDraw = isDraw,
+            winningLine = winningLine,
+            validMoves = newValidMoves
         )
 
         // CPU対戦モードかつCPUターンになった場合、CPU手番を実行
@@ -172,6 +194,10 @@ class GameViewModel : ViewModel() {
     }
 
     private fun checkWinner(board: Array<Array<CellState>>, row: Int, col: Int, cellState: CellState): Player? {
+        return checkWinnerWithLine(board, row, col, cellState).first
+    }
+
+    private fun checkWinnerWithLine(board: Array<Array<CellState>>, row: Int, col: Int, cellState: CellState): Pair<Player?, List<Pair<Int, Int>>> {
         val directions = listOf(
             Pair(0, 1),   // 横
             Pair(1, 0),   // 縦
@@ -180,13 +206,14 @@ class GameViewModel : ViewModel() {
         )
 
         for ((dRow, dCol) in directions) {
-            var count = 1 // 配置したセル自体をカウント
+            val lineCoords = mutableListOf<Pair<Int, Int>>()
+            lineCoords.add(Pair(row, col)) // 配置したセル
 
             // 正方向にチェック
             var r = row + dRow
             var c = col + dCol
             while (r in 0..11 && c in 0..11 && board[r][c] == cellState) {
-                count++
+                lineCoords.add(Pair(r, c))
                 r += dRow
                 c += dCol
             }
@@ -195,21 +222,24 @@ class GameViewModel : ViewModel() {
             r = row - dRow
             c = col - dCol
             while (r in 0..11 && c in 0..11 && board[r][c] == cellState) {
-                count++
+                lineCoords.add(0, Pair(r, c)) // 先頭に追加
                 r -= dRow
                 c -= dCol
             }
 
-            if (count >= 4) {
-                return if (cellState == CellState.WHITE) Player.WHITE else Player.RED
+            if (lineCoords.size >= 4) {
+                val winner = if (cellState == CellState.WHITE) Player.WHITE else Player.RED
+                return Pair(winner, lineCoords)
             }
         }
 
-        return null
+        return Pair(null, emptyList())
     }
 
     fun startSinglePlayerGame() {
-        gameState = GameState(gameMode = GameMode.SINGLE_PLAYER)
+        val newState = GameState(gameMode = GameMode.SINGLE_PLAYER)
+        val validMoves = getValidMovesForBoard(newState.board)
+        gameState = newState.copy(validMoves = validMoves)
     }
 
     fun startCpuGame() {
@@ -220,13 +250,15 @@ class GameViewModel : ViewModel() {
         // 連勝数を保持（新規ゲーム開始時は0、続けるときは維持）
         val currentWinStreak = if (gameState.gameMode == GameMode.VS_CPU) gameState.playerWinStreak else 0
 
-        gameState = GameState(
+        val newState = GameState(
             gameMode = GameMode.VS_CPU,
             cpuDifficulty = randomDifficulty,
             playerIsWhite = playerIsWhite,
             currentPlayer = Player.WHITE,
             playerWinStreak = currentWinStreak
         )
+        val validMoves = getValidMovesForBoard(newState.board)
+        gameState = newState.copy(validMoves = validMoves)
 
         // CPUが先攻（白）の場合、すぐにCPUの手を実行
         if (!playerIsWhite) {
@@ -258,7 +290,10 @@ class GameViewModel : ViewModel() {
             val cpuCellState = if (gameState.playerIsWhite) CellState.RED else CellState.WHITE
             newBoard[row][col] = cpuCellState
 
-            val winner = checkWinner(newBoard, row, col, cpuCellState)
+            val (winner, winningLine) = checkWinnerWithLine(newBoard, row, col, cpuCellState)
+
+            // 引き分け判定
+            val isDraw = winner == null && newBoard.all { row -> row.all { it != CellState.EMPTY } }
 
             // 連勝数の更新（CPUの手で勝負が決まった場合）
             var newWinStreak = gameState.playerWinStreak
@@ -272,13 +307,23 @@ class GameViewModel : ViewModel() {
                 }
             }
 
+            // 有効な手を更新
+            val newValidMoves = if (!isDraw && winner == null) {
+                getValidMovesForBoard(newBoard)
+            } else {
+                emptyList()
+            }
+
             gameState = gameState.copy(
                 board = newBoard,
                 currentPlayer = if (gameState.currentPlayer == Player.WHITE) Player.RED else Player.WHITE,
                 winner = winner,
-                isGameOver = winner != null,
+                isGameOver = winner != null || isDraw,
                 isWaitingForCpu = false,
-                playerWinStreak = newWinStreak
+                playerWinStreak = newWinStreak,
+                isDraw = isDraw,
+                winningLine = winningLine,
+                validMoves = newValidMoves
             )
         }
     }

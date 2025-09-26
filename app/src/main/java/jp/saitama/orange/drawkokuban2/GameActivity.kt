@@ -195,17 +195,18 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
                 )
             }
 
-            // 勝利表示
-            if (gameViewModel.gameState.isGameOver && gameViewModel.gameState.winner != null) {
+            // 勝利・引き分け表示
+            if (gameViewModel.gameState.isGameOver) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Text(
-                        text = when (gameViewModel.gameState.winner) {
-                            Player.WHITE -> "白の勝利！"
-                            Player.RED -> "赤の勝利！"
+                        text = when {
+                            gameViewModel.gameState.isDraw -> "引き分け！"
+                            gameViewModel.gameState.winner == Player.WHITE -> "白の勝利！"
+                            gameViewModel.gameState.winner == Player.RED -> "赤の勝利！"
                             else -> ""
                         },
                         fontSize = 20.sp,
@@ -290,11 +291,26 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
         for (row in 0..11) {
             for (col in 0..11) {
                 val cellState = gameViewModel.gameState.board[row][col]
+
+                // 配置済みブロックの描画
                 if (cellState != CellState.EMPTY) {
-                    val color = when (cellState) {
+                    val baseColor = when (cellState) {
                         CellState.WHITE -> Color.White
                         CellState.RED -> Color.Red
                         else -> Color.Transparent
+                    }
+
+                    // 勝利ラインのハイライト
+                    val isWinningCell = gameViewModel.gameState.winningLine.contains(Pair(row, col))
+                    val color = if (isWinningCell) {
+                        // 勝利ラインは明るく光らせる
+                        when (cellState) {
+                            CellState.WHITE -> Color(0xFFFFFFAA) // 黄色がかった白
+                            CellState.RED -> Color(0xFFFF6666) // 明るい赤
+                            else -> baseColor
+                        }
+                    } else {
+                        baseColor
                     }
 
                     drawRect(
@@ -302,6 +318,34 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
                         topLeft = Offset(col * cellSize, row * cellSize),
                         size = Size(cellSize, cellSize)
                     )
+
+                    // 勝利ラインに枠線を追加
+                    if (isWinningCell) {
+                        drawRect(
+                            color = Color.Yellow,
+                            topLeft = Offset(col * cellSize, row * cellSize),
+                            size = Size(cellSize, cellSize),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx())
+                        )
+                    }
+                }
+
+                // 配置可能位置のハイライト
+                else if (gameViewModel.gameState.validMoves.contains(Pair(row, col)) && !gameViewModel.gameState.isGameOver) {
+                    val isPlayerTurn = when {
+                        gameViewModel.gameState.gameMode == GameMode.SINGLE_PLAYER -> true
+                        gameViewModel.gameState.isWaitingForCpu -> false
+                        gameViewModel.gameState.playerIsWhite -> gameViewModel.gameState.currentPlayer == Player.WHITE
+                        else -> gameViewModel.gameState.currentPlayer == Player.RED
+                    }
+
+                    if (isPlayerTurn) {
+                        drawRect(
+                            color = Color(0x40FFFF00), // 薄い黄色
+                            topLeft = Offset(col * cellSize, row * cellSize),
+                            size = Size(cellSize, cellSize)
+                        )
+                    }
                 }
             }
         }
@@ -323,11 +367,27 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
         // 横線
         for (i in 0..12) {
             val y = i * cellSize
+            val lineColor = if (i == 11) {
+                // 最下段の上の線（row=11の上境界）を強調
+                Color(0x80FFFFFF) // より明るい白
+            } else if (i == 12) {
+                // 最下段の下の線（一番下の境界）を最も強調
+                Color(0xFFFFFFFF) // 完全な白
+            } else {
+                gridColor
+            }
+
+            val strokeWidth = if (i == 11 || i == 12) {
+                1.5.dp.toPx() // 最下段周辺は太く
+            } else {
+                0.5.dp.toPx()
+            }
+
             drawLine(
-                color = gridColor,
+                color = lineColor,
                 start = Offset(0f, y),
                 end = Offset(boardSize, y),
-                strokeWidth = 0.5.dp.toPx()
+                strokeWidth = strokeWidth
             )
         }
     }
