@@ -46,6 +46,26 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
             .fillMaxSize()
             .background(Color(0xFF0B2E1A))
     ) {
+        // 左上の連勝数表示（CPU対戦時のみ）
+        if (gameViewModel.gameState.gameMode == GameMode.VS_CPU) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0x80000000) // 半透明黒
+                )
+            ) {
+                Text(
+                    text = "連勝: ${gameViewModel.gameState.playerWinStreak}",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+        }
+
         // 右上のバツボタン
         IconButton(
             onClick = onClose,
@@ -196,14 +216,44 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Button(
-                    onClick = { gameViewModel.resetGame() },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        "新しいゲーム",
-                        color = Color.Black
-                    )
+                    Button(
+                        onClick = { gameViewModel.resetGame() },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                    ) {
+                        Text(
+                            "最初に戻る",
+                            color = Color.White,
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    // CPU対戦だった場合は続けるボタンを表示
+                    if (gameViewModel.gameState.gameMode == GameMode.VS_CPU) {
+                        Button(
+                            onClick = { gameViewModel.startCpuGame() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                        ) {
+                            Text(
+                                "続けてCPU対戦",
+                                color = Color.Black,
+                                fontSize = 12.sp
+                            )
+                        }
+                    } else {
+                        Button(
+                            onClick = { gameViewModel.startSinglePlayerGame() },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                        ) {
+                            Text(
+                                "続けて一人モード",
+                                color = Color.Black,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
                 }
             }
         }

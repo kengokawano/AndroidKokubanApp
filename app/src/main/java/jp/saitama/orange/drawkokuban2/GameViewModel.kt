@@ -38,7 +38,8 @@ data class GameState(
     val gameMode: GameMode = GameMode.SINGLE_PLAYER,
     val cpuDifficulty: CpuDifficulty = CpuDifficulty.EASY,
     val playerIsWhite: Boolean = true, // プレイヤーが白（先攻）かどうか
-    val isWaitingForCpu: Boolean = false
+    val isWaitingForCpu: Boolean = false,
+    val playerWinStreak: Int = 0 // プレイヤーの連勝数（CPU対戦時のみ）
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -54,6 +55,7 @@ data class GameState(
         if (cpuDifficulty != other.cpuDifficulty) return false
         if (playerIsWhite != other.playerIsWhite) return false
         if (isWaitingForCpu != other.isWaitingForCpu) return false
+        if (playerWinStreak != other.playerWinStreak) return false
 
         return true
     }
@@ -67,6 +69,7 @@ data class GameState(
         result = 31 * result + cpuDifficulty.hashCode()
         result = 31 * result + playerIsWhite.hashCode()
         result = 31 * result + isWaitingForCpu.hashCode()
+        result = 31 * result + playerWinStreak.hashCode()
         return result
     }
 }
@@ -102,11 +105,24 @@ class GameViewModel : ViewModel() {
         // 勝利判定
         val winner = checkWinner(newBoard, row, col, cellState)
 
+        // 連勝数の更新（CPU対戦時のみ）
+        var newWinStreak = gameState.playerWinStreak
+        if (gameState.gameMode == GameMode.VS_CPU && winner != null) {
+            val isPlayerWin = (gameState.playerIsWhite && winner == Player.WHITE) ||
+                             (!gameState.playerIsWhite && winner == Player.RED)
+            if (isPlayerWin) {
+                newWinStreak = gameState.playerWinStreak + 1
+            } else {
+                newWinStreak = 0 // CPUに負けたら連勝リセット
+            }
+        }
+
         gameState = gameState.copy(
             board = newBoard,
             currentPlayer = if (gameState.currentPlayer == Player.WHITE) Player.RED else Player.WHITE,
             winner = winner,
-            isGameOver = winner != null
+            isGameOver = winner != null,
+            playerWinStreak = newWinStreak
         )
 
         // CPU対戦モードかつCPUターンになった場合、CPU手番を実行
@@ -200,11 +216,15 @@ class GameViewModel : ViewModel() {
         val randomDifficulty = difficulties.random()
         val playerIsWhite = kotlin.random.Random.nextBoolean()
 
+        // 連勝数を保持（新規ゲーム開始時は0、続けるときは維持）
+        val currentWinStreak = if (gameState.gameMode == GameMode.VS_CPU) gameState.playerWinStreak else 0
+
         gameState = GameState(
             gameMode = GameMode.VS_CPU,
             cpuDifficulty = randomDifficulty,
             playerIsWhite = playerIsWhite,
-            currentPlayer = Player.WHITE
+            currentPlayer = Player.WHITE,
+            playerWinStreak = currentWinStreak
         )
 
         // CPUが先攻（白）の場合、すぐにCPUの手を実行
@@ -238,12 +258,25 @@ class GameViewModel : ViewModel() {
 
             val winner = checkWinner(newBoard, row, col, cpuCellState)
 
+            // 連勝数の更新（CPUの手で勝負が決まった場合）
+            var newWinStreak = gameState.playerWinStreak
+            if (winner != null) {
+                val isPlayerWin = (gameState.playerIsWhite && winner == Player.WHITE) ||
+                                 (!gameState.playerIsWhite && winner == Player.RED)
+                if (isPlayerWin) {
+                    newWinStreak = gameState.playerWinStreak + 1
+                } else {
+                    newWinStreak = 0 // CPUに負けたら連勝リセット
+                }
+            }
+
             gameState = gameState.copy(
                 board = newBoard,
                 currentPlayer = if (gameState.currentPlayer == Player.WHITE) Player.RED else Player.WHITE,
                 winner = winner,
                 isGameOver = winner != null,
-                isWaitingForCpu = false
+                isWaitingForCpu = false,
+                playerWinStreak = newWinStreak
             )
         }
     }
