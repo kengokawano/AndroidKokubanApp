@@ -32,6 +32,11 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+fun getSlotNameWithSeconds(saveDate: Long): String {
+    val sdf = SimpleDateFormat("MM/dd HH:mm:ss", Locale.getDefault())
+    return sdf.format(Date(saveDate))
+}
+
 data class SlotData(
     val slotNumber: Int,
     val file: File?,
@@ -41,42 +46,7 @@ data class SlotData(
     val isEmpty: Boolean get() = file == null || !file.exists()
 }
 
-// 日付時間形式のスロット名称ユーティリティ
-object DateTimeSlotUtils {
 
-    fun getSlotName(slotNumber: Int, saveDate: Long): String {
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = saveDate
-
-        val month = calendar.get(Calendar.MONTH) + 1
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
-        val hour = calendar.get(Calendar.HOUR_OF_DAY)
-
-        return "${month}月${day}日${hour}時間目"
-    }
-
-    fun getShortSlotName(slotNumber: Int, saveDate: Long): String {
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = saveDate
-
-        val month = calendar.get(Calendar.MONTH) + 1
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
-        val hour = calendar.get(Calendar.HOUR_OF_DAY)
-
-        return "${month}/${day} ${hour}h"
-    }
-
-    fun getHeaderSlotName(slotNumber: Int, saveDate: Long): String {
-        val calendar = Calendar.getInstance()
-        calendar.timeInMillis = saveDate
-
-        val month = calendar.get(Calendar.MONTH) + 1
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
-        val hour = calendar.get(Calendar.HOUR_OF_DAY)
-
-        return "${month}月${day}日　${hour}時間目"
-    }
-}
 
 @Composable
 fun FileManagerScreen(
@@ -173,10 +143,7 @@ fun FileManagerScreen(
             onDismissRequest = { showDeleteDialog = null },
             title = { Text(stringResource(R.string.dialog_delete_title)) },
             text = {
-                val slot = slots.find { it.slotNumber == slotNumber }
-                val slotName = slot?.lastModified?.let {
-                    DateTimeSlotUtils.getSlotName(slotNumber, it)
-                } ?: "空き$slotNumber"
+                val slotName = "スロット$slotNumber"
                 Text(stringResource(R.string.dialog_delete_message, slotName))
             },
             confirmButton = {
@@ -272,31 +239,12 @@ fun SlotCard(
                     ) {
                         Text(
                             slot.lastModified?.let {
-                                DateTimeSlotUtils.getShortSlotName(slot.slotNumber, it)
+                                getSlotNameWithSeconds(it)
                             } ?: "空き${slot.slotNumber}",
                             color = Color.White,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                         )
-                    }
-
-                    // 保存時間（右下オーバーレイ）
-                    slot.lastModified?.let {
-                        Surface(
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(4.dp),
-                            color = Color.Black.copy(alpha = 0.7f),
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                SimpleDateFormat("HH:mm", Locale.getDefault())
-                                    .format(Date(it)),
-                                color = Color.Gray,
-                                fontSize = 10.sp,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                            )
-                        }
                     }
                 }
             }

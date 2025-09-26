@@ -367,7 +367,7 @@ private fun ChalkboardScreenContent(
                         // 現在のファイルの保存日時を取得
                         val file = java.io.File(context.filesDir, "chalkboard_$slot.png")
                         val headerText = if (file.exists()) {
-                            DateTimeSlotUtils.getHeaderSlotName(slot, file.lastModified())
+                            "スロット$slot"
                         } else {
                             "新規作成"
                         }
