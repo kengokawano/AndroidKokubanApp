@@ -469,14 +469,22 @@ private fun ChalkboardScreenContent(
                 .background(Color(0xFF0B2E1A)) // キャンバス部分は黒板色（緑）
                 .border(2.dp, Color.Gray, RoundedCornerShape(8.dp))
                 .onGloballyPositioned { coordinates ->
-                    canvasSize = Size(
+                    val newSize = Size(
                         coordinates.size.width.toFloat(),
                         coordinates.size.height.toFloat()
                     )
-                    if (viewModel.state.bitmap == null && canvasSize.width > 0 && canvasSize.height > 0) {
+                    val currentBitmap = viewModel.state.bitmap
+
+                    // 新しいサイズが有効で、現在のBitmapがないか、サイズが異なる場合に初期化する
+                    if (newSize.width > 0 && newSize.height > 0 &&
+                        (currentBitmap == null ||
+                                currentBitmap.width != newSize.width.toInt() ||
+                                currentBitmap.height != newSize.height.toInt())) {
+
+                        canvasSize = newSize
                         viewModel.initializeBitmap(
-                            canvasSize.width.toInt(),
-                            canvasSize.height.toInt(),
+                            newSize.width.toInt(),
+                            newSize.height.toInt(),
                             context
                         )
                     }
@@ -500,8 +508,12 @@ private fun ChalkboardScreenContent(
                 Image(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = stringResource(R.string.content_desc_chalkboard),
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.FillBounds // サイズに合わせてスケール
                 )
+            } ?: run {
+                // Bitmapがない場合は空のスペースを表示
+                Spacer(modifier = Modifier.fillMaxSize())
             }
 
             // 日付表示（右上オーバーレイ）
