@@ -22,7 +22,7 @@
     <string name="dialog_new_file_message">新しい黒板を作成しますか？現在の内容は失われます。</string>
     <string name="dialog_delete_title">削除確認</string>
     <string name="dialog_delete_message">%1$s を削除しますか？</string>
-    <string name="dialog_game_title">確認</string>
+    <string name="dialog_game_title">休み時間</string>
     <string name="dialog_game_message">黒板ゲームしますか？</string>
     <string name="dialog_ok">OK</string>
     <string name="dialog_cancel">キャンセル</string>
