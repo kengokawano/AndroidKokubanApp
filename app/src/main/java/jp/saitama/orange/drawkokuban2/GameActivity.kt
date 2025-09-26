@@ -26,6 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import jp.saitama.orange.drawkokuban2.ui.theme.MyApplicationTheme
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.EaseInCubic
+import kotlinx.coroutines.launch
 
 class GameActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -269,6 +273,28 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
 
 @Composable
 fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
+    val blockAnimations = remember { mutableStateMapOf<Pair<Int, Int>, Animatable<Float, *>>() }
+
+    // 新しいブロックが置かれたのを検知してアニメーションを開始する
+    LaunchedEffect(gameViewModel.gameState.lastPlacedBlock) {
+        val targetBlock = gameViewModel.gameState.lastPlacedBlock
+        if (targetBlock != null && !blockAnimations.containsKey(targetBlock)) {
+            val (row, _) = targetBlock
+            val animatable = Animatable(0f) // Y座標を0（一番上）から開始
+            blockAnimations[targetBlock] = animatable
+
+            launch {
+                animatable.animateTo(
+                    targetValue = row.toFloat(), // 最終的な行インデックスまでアニメーション
+                    animationSpec = tween(durationMillis = 400, easing = EaseInCubic) // 0.4秒で落下
+                )
+                // アニメーション完了後、マップから削除してViewModelに通知
+                blockAnimations.remove(targetBlock)
+                gameViewModel.onAnimationCompleted()
+            }
+        }
+    }
+
     Canvas(
         modifier = modifier.pointerInput(Unit) {
             detectTapGestures { offset ->
@@ -296,6 +322,10 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
         for (row in 0..11) {
             for (col in 0..11) {
                 val cellState = gameViewModel.gameState.board[row][col]
+                val pos = Pair(row, col)
+
+                // アニメーション中のY座標を取得。なければ本来の行位置を使う。
+                val animatedY = blockAnimations[pos]?.value ?: row.toFloat()
 
                 // 配置済みブロックの描画
                 if (cellState != CellState.EMPTY) {
@@ -308,7 +338,6 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
                     // 勝利ラインのハイライト
                     val isWinningCell = gameViewModel.gameState.winningLine.contains(Pair(row, col))
                     val color = if (isWinningCell) {
-                        // 勝利ラインは明るく光らせる
                         when (cellState) {
                             CellState.WHITE -> AppColors.WINNING_WHITE
                             CellState.RED -> AppColors.WINNING_RED
@@ -320,7 +349,7 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
 
                     drawRect(
                         color = color,
-                        topLeft = Offset(col * cellSize, row * cellSize),
+                        topLeft = Offset(col * cellSize, animatedY * cellSize),
                         size = Size(cellSize, cellSize)
                     )
 
@@ -328,7 +357,7 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
                     if (isWinningCell) {
                         drawRect(
                             color = Color.Yellow,
-                            topLeft = Offset(col * cellSize, row * cellSize),
+                            topLeft = Offset(col * cellSize, row * cellSize), // 枠線はアニメーションさせない
                             size = Size(cellSize, cellSize),
                             style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx())
                         )
@@ -373,14 +402,13 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
         for (i in 0..12) {
             val y = i * cellSize
             val lineColor = if (i == 12) {
-                // 一番下の境界線のみ強調
                 AppColors.BOTTOM_LINE_HIGHLIGHT
             } else {
                 gridColor
             }
 
             val strokeWidth = if (i == 12) {
-                2.0.dp.toPx() // 一番下のラインを太く
+                2.0.dp.toPx()
             } else {
                 0.5.dp.toPx()
             }

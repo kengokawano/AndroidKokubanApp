@@ -43,7 +43,8 @@ data class GameState(
     val playerWinStreak: Int = 0, // プレイヤーの連勝数（CPU対戦時のみ）
     val isDraw: Boolean = false, // 引き分けフラグ
     val winningLine: List<Pair<Int, Int>> = emptyList(), // 勝利ライン座標
-    val validMoves: List<Pair<Int, Int>> = emptyList() // 配置可能位置
+    val validMoves: List<Pair<Int, Int>> = emptyList(), // 配置可能位置
+    val lastPlacedBlock: Pair<Int, Int>? = null // アニメーション用の最後に置かれたブロック
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -145,7 +146,8 @@ class GameViewModel : ViewModel() {
             playerWinStreak = newWinStreak,
             isDraw = isDraw,
             winningLine = winningLine,
-            validMoves = newValidMoves
+            validMoves = newValidMoves,
+            lastPlacedBlock = Pair(row, col) // 最後に置かれたブロックを記録
         )
 
         // CPU対戦モードかつCPUターンになった場合、CPU手番を実行
@@ -161,6 +163,10 @@ class GameViewModel : ViewModel() {
                 }
             }
         }
+    }
+
+    fun onAnimationCompleted() {
+        gameState = gameState.copy(lastPlacedBlock = null)
     }
 
     private fun isValidPlacement(row: Int, col: Int): Boolean {
@@ -323,7 +329,8 @@ class GameViewModel : ViewModel() {
                 playerWinStreak = newWinStreak,
                 isDraw = isDraw,
                 winningLine = winningLine,
-                validMoves = newValidMoves
+                validMoves = newValidMoves,
+                lastPlacedBlock = Pair(row, col) // 最後に置かれたブロックを記録
             )
         }
     }
