@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,8 +47,9 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0B2E1A))
     ) {
+        WoodTextureBackground()
+
         // 左上の連勝数表示（CPU対戦時のみ）
         if (gameViewModel.gameState.gameMode == GameMode.VS_CPU) {
             Card(
@@ -244,7 +248,8 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
                                 fontSize = 12.sp
                             )
                         }
-                    } else {
+                    }
+                    else {
                         Button(
                             onClick = { gameViewModel.startSinglePlayerGame() },
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White)
@@ -389,3 +394,4 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
         }
     }
 }
+

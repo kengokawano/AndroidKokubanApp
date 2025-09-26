@@ -158,7 +158,7 @@ fun AppNavigation() {
                             scope.launch {
                                 val job = launch {
                                                                         snackbarHostState.showSnackbar(
-                                        message = "【空き ${slot}】 に保存しました",
+                                        message = "【 空き ${slot} 】 に保存しました",
                                         duration = SnackbarDuration.Indefinite
                                     )
                                 }
@@ -799,6 +799,33 @@ fun AboutDialog(
     onDismiss: () -> Unit,
     onGameStart: () -> Unit = {}
 ) {
+    var showConfirmationDialog by remember { mutableStateOf(false) }
+
+    if (showConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmationDialog = false },
+            title = { Text(stringResource(R.string.dialog_game_title)) },
+            text = { Text(stringResource(R.string.dialog_game_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmationDialog = false
+                        onGameStart()
+                    }
+                ) {
+                    Text(stringResource(R.string.dialog_ok))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showConfirmationDialog = false }
+                ) {
+                    Text(stringResource(R.string.dialog_cancel))
+                }
+            }
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -840,7 +867,7 @@ fun AboutDialog(
 
                 // 隠しゲーム起動ボタン
                 Button(
-                    onClick = onGameStart,
+                    onClick = { showConfirmationDialog = true },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF0B2E1A)

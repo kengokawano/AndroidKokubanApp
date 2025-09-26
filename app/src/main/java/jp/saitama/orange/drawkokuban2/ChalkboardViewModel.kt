@@ -180,9 +180,7 @@ class ChalkboardViewModel : ViewModel() {
     fun loadBitmap(context: Context, slotNumber: Int) {
         val file = File(context.filesDir, "chalkboard_$slotNumber.png")
         val bitmap = loadPng(file)
-        if (bitmap != null) {
-            // ロードしたビットマップに木目背景を適用
-            fillChalkboardBackground(bitmap, context)
+                if (bitmap != null) {
             state = state.copy(bitmap = bitmap)
         }
     }
