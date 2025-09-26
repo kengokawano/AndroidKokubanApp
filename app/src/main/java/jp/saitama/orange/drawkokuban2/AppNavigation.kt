@@ -667,29 +667,22 @@ fun SettingsDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("設定")
+            Text(stringResource(R.string.dialog_settings_title))
         },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    "アプリケーション設定",
-                    fontSize = 18.sp,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
                 // ペン設定セクション
                 Text(
-                    "描画設定",
+                    stringResource(R.string.settings_section_drawing),
                     fontSize = 16.sp,
-                    color = Color.DarkGray
+                    color = Color(255, 240, 130)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // 細いペンサイズ設定
-                Text("細いペンサイズ: ${thinPenSize.toInt()}")
+                Text(stringResource(R.string.settings_pen_thin_size, thinPenSize.toInt()))
                 Slider(
                     value = thinPenSize,
                     onValueChange = onThinPenSizeChanged,
@@ -701,7 +694,7 @@ fun SettingsDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // 太いペンサイズ設定
-                Text("太いペンサイズ: ${thickPenSize.toInt()}")
+                Text(stringResource(R.string.settings_pen_thick_size, thickPenSize.toInt()))
                 Slider(
                     value = thickPenSize,
                     onValueChange = onThickPenSizeChanged,
@@ -713,7 +706,7 @@ fun SettingsDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // 黒板消しサイズ設定
-                Text("黒板消しの円の広さ: ${eraserRadius.toInt()}")
+                Text(stringResource(R.string.settings_eraser_size, eraserRadius.toInt()))
                 Slider(
                     value = eraserRadius,
                     onValueChange = onEraserRadiusChanged,
@@ -728,9 +721,9 @@ fun SettingsDialog(
 
                 // 表示設定セクション
                 Text(
-                    "表示設定",
+                    stringResource(R.string.settings_section_display),
                     fontSize = 16.sp,
-                    color = Color.DarkGray
+                    color = Color(255, 240, 130)
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -741,7 +734,7 @@ fun SettingsDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("右上の日付表示")
+                    Text(stringResource(R.string.settings_display_date))
                     Switch(
                         checked = showDateOverlay,
                         onCheckedChange = onDateOverlayChanged
@@ -750,9 +743,9 @@ fun SettingsDialog(
 
                 // ファイル設定セクション
                 Text(
-                    "ファイル設定",
+                    stringResource(R.string.settings_section_file),
                     fontSize = 16.sp,
-                    color = Color.DarkGray
+                    color = Color(255, 240, 130)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -762,14 +755,14 @@ fun SettingsDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("PNG Export時の背景")
+                    Text(stringResource(R.string.settings_file_export_bg))
                     Switch(
                         checked = exportWithBackground,
                         onCheckedChange = onExportWithBackgroundChanged
                     )
                 }
                 Text(
-                    text = if (exportWithBackground) "緑の背景色でエクスポート" else "透明な背景でエクスポート",
+                    text = stringResource(if (exportWithBackground) R.string.settings_file_export_bg_desc_on else R.string.settings_file_export_bg_desc_off),
                     fontSize = 12.sp,
                     color = Color.Gray
                 )
@@ -778,7 +771,7 @@ fun SettingsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("閉じる")
+                Text(stringResource(R.string.dialog_close))
             }
         }
     )
@@ -825,11 +818,11 @@ fun AboutDialog(
                 Icon(
                     Icons.Default.Info,
                     contentDescription = null,
-                    tint = Color(0xFF0B2E1A),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("黒板太一2について")
+                Text(stringResource(R.string.about_title))
             }
         },
         text = {
@@ -838,19 +831,18 @@ fun AboutDialog(
             ) {
                 // アプリ基本情報
                 Text(
-                    "黒板太一2",
+                    stringResource(R.string.app_name),
                     fontSize = 20.sp,
-                    color = Color(0xFF0B2E1A)
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    "Chalkboard Taichi 2",
-                    fontSize = 14.sp,
-                    color = Color.Gray
+                    stringResource(R.string.app_name_english),
+                    fontSize = 14.sp
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    "デジタル黒板描画アプリケーション",
+                    stringResource(R.string.app_description),
                     fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -864,7 +856,7 @@ fun AboutDialog(
                     )
                 ) {
                     Text(
-                        "黒板大将",
+                        stringResource(R.string.game_name),
                         color = Color.White,
                         fontSize = 16.sp
                     )
@@ -874,56 +866,52 @@ fun AboutDialog(
 
                 // バージョン情報
                 Text(
-                    "アプリ情報",
-                    fontSize = 16.sp,
-                    color = Color.DarkGray
+                    stringResource(R.string.about_section_app_info),
+                    fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("バージョン: 2.0.0")
-                Text("ビルド日: 2024年9月24日")
-                Text("対応OS: Android 8.0以上")
+                Text(stringResource(R.string.about_app_version_label) + " 2.0.0")
+                Text(stringResource(R.string.about_app_build_date_label) + " 2024年9月24日")
+                Text(stringResource(R.string.about_app_os_label) + " Android 8.0以上")
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // 主な機能
                 Text(
-                    "主な機能",
-                    fontSize = 16.sp,
-                    color = Color.DarkGray
+                    stringResource(R.string.about_section_features),
+                    fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("✓ 白・赤チョークでの自然な描画")
-                Text("✓ 太い・細いペン切り替え")
-                Text("✓ 消しゴム・全消し機能")
-                Text("✓ 30スロットファイル管理")
-                Text("✓ 日付時間ベース命名")
-                Text("✓ 多言語対応（日本語・英語）")
-                Text("✓ 木目テクスチャ背景")
+                Text(stringResource(R.string.about_feature_drawing))
+                Text(stringResource(R.string.about_feature_pen_thickness))
+                Text(stringResource(R.string.about_feature_eraser))
+                Text(stringResource(R.string.about_feature_file_slots))
+                Text(stringResource(R.string.about_feature_naming))
+                Text(stringResource(R.string.about_feature_i18n))
+                Text(stringResource(R.string.about_feature_wood_bg))
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // 開発者情報
                 Text(
-                    "開発者情報",
-                    fontSize = 16.sp,
-                    color = Color.DarkGray
+                    stringResource(R.string.about_section_developer),
+                    fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("開発者: Orange Saitama")
-                Text("技術: Kotlin, Jetpack Compose")
-                Text("© 2024 Orange Saitama")
+                Text(stringResource(R.string.about_dev_name))
+                Text(stringResource(R.string.about_dev_tech))
+                Text(stringResource(R.string.about_dev_copyright))
 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "このアプリは教育現場での利用を想定して開発されました。",
-                    fontSize = 12.sp,
-                    color = Color.Gray
+                    stringResource(R.string.about_app_target_audience),
+                    fontSize = 12.sp
                 )
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("閉じる")
+                Text(stringResource(R.string.dialog_close))
             }
         }
     )
