@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import java.io.File
 
@@ -118,7 +119,7 @@ class ChalkboardViewModel : ViewModel() {
             } else {
                 val color = when (state.penColor) {
                     PenColor.WHITE -> Color.WHITE
-                    PenColor.RED -> Color.RED
+                    PenColor.RED -> AppColors.RED.toArgb()
                 }
                 val thickness = getPenThickness(context)
                 drawStroke(bitmap, currentPath.takeLast(2), color, thickness)

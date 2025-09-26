@@ -351,7 +351,7 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
         }
 
         // グリッド線を描画（薄い白色）
-        val gridColor = Color(0x40FFFFFF)
+        val gridColor = AppColors.GRID_LINE
 
         // 縦線
         for (i in 0..12) {
@@ -369,7 +369,7 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
             val y = i * cellSize
             val lineColor = if (i == 12) {
                 // 一番下の境界線のみ強調
-                Color(0xFFFFFFFF) // 完全な白
+                AppColors.BOTTOM_LINE_HIGHLIGHT
             } else {
                 gridColor
             }
