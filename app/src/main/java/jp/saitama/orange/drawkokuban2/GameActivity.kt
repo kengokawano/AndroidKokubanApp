@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -13,10 +14,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import jp.saitama.orange.drawkokuban2.ui.theme.MyApplicationTheme
 
 class GameActivity : ComponentActivity() {
@@ -24,8 +29,10 @@ class GameActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MyApplicationTheme {
+                val gameViewModel: GameViewModel = viewModel()
                 GameScreen(
-                    onClose = { finish() }
+                    onClose = { finish() },
+                    gameViewModel = gameViewModel
                 )
             }
         }
@@ -33,7 +40,7 @@ class GameActivity : ComponentActivity() {
 }
 
 @Composable
-fun GameScreen(onClose: () -> Unit) {
+fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -75,7 +82,8 @@ fun GameScreen(onClose: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 16.dp),
+                gameViewModel = gameViewModel
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -85,21 +93,87 @@ fun GameScreen(onClose: () -> Unit) {
                 fontSize = 14.sp,
                 color = Color.White
             )
+
+            // 勝利表示
+            if (gameViewModel.gameState.isGameOver && gameViewModel.gameState.winner != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Text(
+                        text = when (gameViewModel.gameState.winner) {
+                            Player.WHITE -> "白の勝利！"
+                            Player.RED -> "赤の勝利！"
+                            else -> ""
+                        },
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = { gameViewModel.resetGame() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                ) {
+                    Text(
+                        "新しいゲーム",
+                        color = Color.Black
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-fun GameBoard(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val boardSize = size.minDimension
+fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
+    Canvas(
+        modifier = modifier.pointerInput(Unit) {
+            detectTapGestures { offset ->
+                val boardSize = kotlin.math.min(size.width, size.height)
+                val cellSize = boardSize / 12f
+                val col = (offset.x / cellSize).toInt()
+                val row = (offset.y / cellSize).toInt()
+
+                if (row in 0..11 && col in 0..11) {
+                    gameViewModel.onCellClick(row, col)
+                }
+            }
+        }
+    ) {
+        val boardSize = kotlin.math.min(size.width, size.height)
         val cellSize = boardSize / 12f
 
         // 背景色を描画（正方形領域のみ）
         drawRect(
             color = Color(0xFF0F3D20),
-            size = androidx.compose.ui.geometry.Size(boardSize, boardSize)
+            size = Size(boardSize, boardSize)
         )
+
+        // セルを描画
+        for (row in 0..11) {
+            for (col in 0..11) {
+                val cellState = gameViewModel.gameState.board[row][col]
+                if (cellState != CellState.EMPTY) {
+                    val color = when (cellState) {
+                        CellState.WHITE -> Color.White
+                        CellState.RED -> Color.Red
+                        else -> Color.Transparent
+                    }
+
+                    drawRect(
+                        color = color,
+                        topLeft = Offset(col * cellSize, row * cellSize),
+                        size = Size(cellSize, cellSize)
+                    )
+                }
+            }
+        }
 
         // グリッド線を描画（薄い白色）
         val gridColor = Color(0x40FFFFFF)
