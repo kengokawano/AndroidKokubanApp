@@ -748,12 +748,6 @@ fun SettingsDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("• 木目背景の変更（予定）")
-                Text("• テーマ変更（予定）")
-
-                Spacer(modifier = Modifier.height(16.dp))
-
                 // ファイル設定セクション
                 Text(
                     "ファイル設定",
@@ -779,10 +773,6 @@ fun SettingsDialog(
                     fontSize = 12.sp,
                     color = Color.Gray
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("• 自動保存機能（予定）")
-                Text("• バックアップ機能（予定）")
 
             }
         },
