@@ -36,7 +36,6 @@
     <!-- Content Descriptions -->
     <string name="content_desc_chalkboard">Chalkboard</string>
     <string name="content_desc_thumbnail">Thumbnail</string>
-    <string name="content_desc_no_preview">No Preview</string>
 
     <!-- Dynamic Display -->
     <string name="save_success_message">Saved to【 Slot %1$d 】</string>

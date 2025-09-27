@@ -139,6 +139,35 @@ class ChalkboardViewModel : ViewModel() {
         currentPath.clear()
     }
 
+    fun drawPoint(point: Offset, context: Context) {
+        Log.d("ChalkboardViewModel", "drawPoint called at (${point.x}, ${point.y})")
+        val bitmap = state.bitmap ?: return.also {
+            Log.e("ChalkboardViewModel", "bitmap is null")
+        }
+
+        if (state.isEraser) {
+            val thickness = getEraserRadius(context)
+            Log.d("ChalkboardViewModel", "Drawing eraser point with radius: $thickness")
+            drawCircle(bitmap, point, thickness, Color.BLACK)
+        } else {
+            val color = when (state.penColor) {
+                PenColor.WHITE -> Color.WHITE
+                PenColor.RED -> AppColors.RED.toArgb()
+            }
+            val thickness = getPenThickness(context) / 2f
+            Log.d("ChalkboardViewModel", "Drawing pen point with thickness: $thickness, color: $color")
+            drawCircle(bitmap, point, thickness, color)
+        }
+
+        // 新しいbitmapインスタンスを作成してComposeに変更を通知
+        val newBitmap = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(newBitmap)
+        canvas.drawBitmap(bitmap, 0f, 0f, null)
+
+        state = state.copy(bitmap = newBitmap)
+        Log.d("ChalkboardViewModel", "drawPoint completed with new bitmap instance")
+    }
+
     fun clearAll(context: Context? = null) {
         val bitmap = state.bitmap ?: return
         clearAll(bitmap, context)
@@ -295,6 +324,16 @@ class ChalkboardViewModel : ViewModel() {
 
         transparentBitmap.setPixels(pixels, 0, originalBitmap.width, 0, 0, originalBitmap.width, originalBitmap.height)
         return transparentBitmap
+    }
+
+    private fun drawCircle(bitmap: Bitmap, point: Offset, radius: Float, color: Int) {
+        val canvas = Canvas(bitmap)
+        val paint = Paint().apply {
+            this.color = color
+            isAntiAlias = true
+            style = Paint.Style.FILL
+        }
+        canvas.drawCircle(point.x, point.y, radius, paint)
     }
 
 }

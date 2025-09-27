@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
@@ -578,8 +579,21 @@ private fun ChalkboardScreenContent(
                     viewModel.state.isThick,
                     viewModel.state.isEraser
                 ) {
+                    detectTapGestures(
+                        onTap = { offset ->
+                            android.util.Log.d("AppNavigation", "TAP at ($offset)")
+                            viewModel.drawPoint(offset, context)
+                        }
+                    )
+                }
+                .pointerInput(
+                    viewModel.state.penColor,
+                    viewModel.state.isThick,
+                    viewModel.state.isEraser
+                ) {
                     detectDragGestures(
                         onDragStart = { offset ->
+                            android.util.Log.d("AppNavigation", "DRAG START at ($offset)")
                             viewModel.startDrawing(offset)
                         },
                         onDrag = { change, _ ->

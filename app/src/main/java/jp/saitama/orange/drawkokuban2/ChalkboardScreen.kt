@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import android.util.Log
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
@@ -37,6 +39,7 @@ private val SELECTED_BORDER_COLOR = Color(0xFFFFD700) // 鮮やかなゴール�
 fun ChalkboardScreen(
     viewModel: ChalkboardViewModel = viewModel()
 ) {
+    Log.d("ChalkboardScreen", "ChalkboardScreen started")
     val context = LocalContext.current
 
     Column(
@@ -65,23 +68,33 @@ fun ChalkboardScreen(
         )
 
         // キャンバス
+        Log.d("ChalkboardScreen", "About to create Box canvas")
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFF0B2E1A))
+                .background(Color.Red) // 赤色でタッチ領域を確認
                 .border(2.dp, Color.Gray, RoundedCornerShape(8.dp))
-                .pointerInput(viewModel.state.penColor, viewModel.state.isThick, viewModel.state.isEraser) {
+                .pointerInput(Unit) {
+                    Log.d("ChalkboardScreen", "detectTapGestures initialized")
+                    detectTapGestures(
+                        onTap = { offset ->
+                            Log.d("ChalkboardScreen", "TAP detected at ($offset)")
+                            viewModel.drawPoint(offset, context)
+                        }
+                    )
+                }
+                .pointerInput(Unit) {
+                    Log.d("ChalkboardScreen", "detectDragGestures initialized")
                     detectDragGestures(
                         onDragStart = { offset ->
-                            viewModel.startDrawing(offset)
+                            Log.d("ChalkboardScreen", "DRAG START at ($offset)")
+                            viewModel.drawPoint(offset, context)
                         },
                         onDrag = { change, _ ->
-                            viewModel.continueDrawing(change.position, context)
-                        },
-                        onDragEnd = {
-                            viewModel.endDrawing()
+                            Log.d("ChalkboardScreen", "DRAG at (${change.position})")
+                            viewModel.drawPoint(change.position, context)
                         }
                     )
                 }
