@@ -24,13 +24,13 @@
     <string name="dialog_delete">削除</string>
 
     <!-- ファイル管理 -->
-    <string name="file_manager_title">連絡XX</string>
+    <string name="file_manager_title">連絡帳</string>
     <string name="file_empty_slot">空き</string>
 
     <!-- モード表示 -->
 
     <!-- エクスポートメッセージ -->
-    <string name="export_success">この連絡を連絡帳に保存しました</string>
+    <string name="export_success">この連絡を画像として保存しました</string>
     <string name="export_failed">保存に失敗しました</string>
 
     <!-- コンテンツ説明 -->

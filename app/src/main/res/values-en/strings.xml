@@ -29,7 +29,7 @@
     <!-- Mode Display -->
 
     <!-- Export Messages -->
-    <string name="export_success">This communication saved to communication book</string>
+    <string name="export_success">This communication saved as image</string>
     <string name="export_failed">Save failed</string>
 
     <!-- Content Descriptions -->
@@ -40,4 +40,78 @@
     <!-- Dynamic Display -->
     <string name="save_success_message">Saved to【 Slot %1$d 】</string>
     <string name="contact_number_format">Contact%1$s</string>
+
+    <!-- Settings Dialog -->
+    <string name="dialog_settings_title">Settings</string>
+    <string name="settings_section_app">Application Settings</string>
+    <string name="settings_section_drawing">Drawing Settings</string>
+    <string name="settings_pen_thin_size">Thin Pen Size: %1$d</string>
+    <string name="settings_pen_thick_size">Thick Pen Size: %1$d</string>
+    <string name="settings_eraser_size">Eraser Circle Size: %1$d</string>
+    <string name="settings_section_display">Display Settings</string>
+    <string name="settings_display_date">Chalkboard Date Display</string>
+    <string name="settings_section_notification">Notification Settings</string>
+    <string name="settings_notification_quick_access">Quick Access Notification</string>
+    <string name="settings_notification_quick_access_desc">Stay in notification bar for quick app access (battery efficient)</string>
+    <string name="settings_section_file">File Settings</string>
+    <string name="settings_file_export_bg">PNG Export Background</string>
+    <string name="dialog_close">Close</string>
+
+    <!-- About Dialog -->
+    <string name="about_title">About Chalkboard Taichi 2</string>
+    <string name="app_name_english">Chalkboard Taichi 2</string>
+    <string name="app_description">Digital Chalkboard Drawing Application</string>
+    <string name="game_name">Chalkboard Tetris</string>
+    <string name="about_section_app_info">App Information</string>
+    <string name="about_app_version_label">Version:</string>
+    <string name="about_app_build_date_label">Build Date:</string>
+    <string name="about_app_os_label">Supported OS:</string>
+    <string name="about_section_features">Main Features</string>
+    <string name="about_feature_drawing">✓ Natural drawing with white and red chalk</string>
+    <string name="about_feature_pen_thickness">✓ Thick and thin pen switching</string>
+    <string name="about_feature_eraser">✓ Eraser and clear all functions</string>
+    <string name="about_feature_file_slots">✓ 30-slot file management</string>
+    <string name="about_feature_naming">✓ Date-time based naming</string>
+    <string name="about_feature_i18n">✓ Multi-language support (Japanese/English)</string>
+    <string name="about_feature_wood_bg">✓ Wood texture background</string>
+    <string name="about_section_developer">Developer Information</string>
+    <string name="about_dev_name">Developer: Orange Saitama</string>
+    <string name="about_dev_tech">Technology: Kotlin, Jetpack Compose</string>
+    <string name="about_dev_copyright">© 2024 Orange Saitama</string>
+    <string name="about_app_target_audience">This app was developed for use in educational settings.</string>
+
+    <!-- Game UI -->
+    <string name="game_start_button">Start Game</string>
+    <string name="about_game_button">Break Time</string>
+    <string name="duty_student_label">Today\'s duty student:</string>
+
+    <!-- Game Rules -->
+    <string name="game_rules_title">Game Rules</string>
+    <string name="game_rule_1">・First, you can place anywhere on the bottom row</string>
+    <string name="game_rule_2">・From the second move, place next to existing pieces</string>
+    <string name="game_rule_3">・Blocks will fall down</string>
+    <string name="game_rule_4">・Get 4 in a row vertically, horizontally, or diagonally to win!</string>
+
+    <!-- Game Screen Text -->
+    <string name="game_close_button">Close</string>
+    <string name="game_win_streak">Win Streak: %1$d</string>
+    <string name="game_difficulty_label">Difficulty: %1$s</string>
+    <string name="game_player_role_white">You: White (First)</string>
+    <string name="game_player_role_red">You: Red (Second)</string>
+    <string name="game_cpu_thinking">CPU is thinking...</string>
+    <string name="game_your_turn_white">Your turn (White)</string>
+    <string name="game_your_turn_red">Your turn (Red)</string>
+    <string name="game_cpu_turn_white">CPU\'s turn (White)</string>
+    <string name="game_cpu_turn_red">CPU\'s turn (Red)</string>
+    <string name="game_result_draw">Draw!</string>
+    <string name="game_result_white_win">White Wins!</string>
+    <string name="game_result_red_win">Red Wins!</string>
+    <string name="game_button_reset">Reset to Start</string>
+    <string name="game_button_restart">Play Again</string>
+
+    <!-- Difficulty Levels -->
+    <string name="difficulty_easy">EASY</string>
+    <string name="difficulty_normal">NORMAL</string>
+    <string name="difficulty_hard">HARD</string>
+    <string name="difficulty_expert">EXPERT</string>
 </resources>

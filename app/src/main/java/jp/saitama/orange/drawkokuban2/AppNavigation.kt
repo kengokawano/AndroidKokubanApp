@@ -627,37 +627,47 @@ fun LoadingScreen() {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 黒板風の背景色でローディング表示
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF0B2E1A))
-                    .border(2.dp, Color.Gray, RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "読み込み中...",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Center
-                )
-            }
+            // loading.xmlのdrawableを使用
+            Image(
+                painter = painterResource(R.drawable.loading),
+                contentDescription = "読み込み中",
+                modifier = Modifier.size(120.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "読み込み中...",
+                color = Color.White,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
 
 @Composable
 fun DateOverlay(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
     val today = Calendar.getInstance()
     val japaneseMonth = getJapaneseMonth(today.get(Calendar.MONTH) + 1)
     val day = today.get(Calendar.DAY_OF_MONTH)
     val dayOfWeek = getJapaneseDayOfWeek(today.get(Calendar.DAY_OF_WEEK))
 
+    // 今日の日直を取得
+    val dutyStudent = StudentNameManager.getTodaysDutyStudent(context)
+
+    // 曜日に応じたテキスト色を設定
+    val textColor = when (today.get(Calendar.DAY_OF_WEEK)) {
+        Calendar.SATURDAY -> Color(126, 203, 220) // 土曜日：青
+        Calendar.SUNDAY -> Color(247, 171, 173)   // 日曜日：赤
+        else -> Color.White                        // 平日：白
+    }
+
     // 縦書き1行表示（括弧部分は横並び）
     val beforeParen = "${japaneseMonth}${getJapaneseNumber(day)}日"
     val parenPart = "（$dayOfWeek）"
-    val afterParen = "日直　XX"
+    val afterParen = "日直　$dutyStudent"
 
     Column(
         modifier = modifier,
@@ -667,7 +677,7 @@ fun DateOverlay(modifier: Modifier = Modifier) {
         beforeParen.forEach { char ->
             Text(
                 text = char.toString(),
-                color = Color.White,
+                color = textColor,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center
             )
@@ -676,7 +686,7 @@ fun DateOverlay(modifier: Modifier = Modifier) {
         // 括弧部分を横並びで表示
         Text(
             text = parenPart,
-            color = Color.White,
+            color = textColor,
             fontSize = 14.sp,
             textAlign = TextAlign.Center
         )
@@ -685,7 +695,7 @@ fun DateOverlay(modifier: Modifier = Modifier) {
         afterParen.forEach { char ->
             Text(
                 text = char.toString(),
-                color = Color.White,
+                color = textColor,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center
             )
