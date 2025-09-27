@@ -143,7 +143,7 @@ fun FileManagerScreen(
             onDismissRequest = { showDeleteDialog = null },
             title = { Text(stringResource(R.string.dialog_delete_title)) },
             text = {
-                val slotName = "連絡${slotNumber.toString().padStart(2, '0')}"
+                val slotName = stringResource(R.string.contact_number_format, slotNumber.toString().padStart(2, '0'))
                 Text(stringResource(R.string.dialog_delete_message, slotName))
             },
             confirmButton = {
@@ -206,7 +206,7 @@ fun SlotCard(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "空き",
+                            stringResource(R.string.file_empty_slot),
                             color = Color.Gray,
                             fontSize = 16.sp,
                             textAlign = TextAlign.Center

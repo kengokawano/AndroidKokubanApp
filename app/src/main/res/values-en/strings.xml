@@ -10,16 +10,12 @@
     <string name="tool_clear_all">Hey, board monitor, erase it please</string>
 
     <!-- Action Buttons -->
-    <string name="action_new">New</string>
     <string name="action_save">Save</string>
     <string name="action_file_list">Communication book</string>
     <string name="action_back">Back</string>
 
     <!-- Dialogs -->
-    <string name="dialog_clear_all_title">Clear All Confirmation</string>
     <string name="dialog_clear_all_message">Clear all content?</string>
-    <string name="dialog_new_file_title">New File Confirmation</string>
-    <string name="dialog_new_file_message">Create a new chalkboard? Current content will be lost.</string>
     <string name="dialog_delete_title">Delete Confirmation</string>
     <string name="dialog_delete_message">Delete %1$s?</string>
     <string name="dialog_ok">OK</string>
@@ -28,14 +24,9 @@
 
     <!-- File Management -->
     <string name="file_manager_title">Communication book</string>
-    <string name="file_empty_message">No saved files</string>
-    <string name="file_create_new">Create new chalkboard</string>
-    <string name="file_slot_number">Slot %1$d</string>
     <string name="file_empty_slot">Empty</string>
 
     <!-- Mode Display -->
-    <string name="mode_new">New</string>
-    <string name="mode_edit_slot">Slot %1$d</string>
 
     <!-- Export Messages -->
     <string name="export_success">This communication saved to communication book</string>
@@ -45,4 +36,8 @@
     <string name="content_desc_chalkboard">Chalkboard</string>
     <string name="content_desc_thumbnail">Thumbnail</string>
     <string name="content_desc_no_preview">No Preview</string>
+
+    <!-- Dynamic Display -->
+    <string name="save_success_message">Saved to【 Slot %1$d 】</string>
+    <string name="contact_number_format">Contact%1$s</string>
 </resources>

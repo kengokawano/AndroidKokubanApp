@@ -10,34 +10,24 @@
     <string name="tool_clear_all">黒板係さん消しといて</string>
 
     <!-- アクションボタン -->
-    <string name="action_new">新規作成</string>
     <string name="action_save">保存</string>
     <string name="action_file_list">連 絡 帳</string>
     <string name="action_back">戻る</string>
 
     <!-- ダイアログ -->
-    <string name="dialog_clear_all_title">全消し確認</string>
     <string name="dialog_clear_all_message">すべての内容を消去しますか？</string>
-    <string name="dialog_new_file_title">新規作成確認</string>
-    <string name="dialog_new_file_message">新しい黒板を作成しますか？現在の内容は失われます。</string>
     <string name="dialog_delete_title">削除確認</string>
     <string name="dialog_delete_message">%1$s を削除しますか？</string>
     <string name="dialog_game_title">休み時間</string>
-    <string name="dialog_game_message">黒板ゲームしますか？</string>
     <string name="dialog_ok">OK</string>
     <string name="dialog_cancel">キャンセル</string>
     <string name="dialog_delete">削除</string>
 
     <!-- ファイル管理 -->
     <string name="file_manager_title">連絡XX</string>
-    <string name="file_empty_message">保存されたファイルがありません</string>
-    <string name="file_create_new">新しい黒板を作成</string>
-    <string name="file_slot_number">空き %1$d</string>
     <string name="file_empty_slot">空き</string>
 
     <!-- モード表示 -->
-    <string name="mode_new">新規作成</string>
-    <string name="mode_edit_slot">空き %1$d</string>
 
     <!-- エクスポートメッセージ -->
     <string name="export_success">この連絡を連絡帳に保存しました</string>
@@ -46,7 +36,10 @@
     <!-- コンテンツ説明 -->
     <string name="content_desc_chalkboard">黒板</string>
     <string name="content_desc_thumbnail">サムネイル</string>
-    <string name="content_desc_no_preview">No Preview</string>
+
+    <!-- 動的表示 -->
+    <string name="save_success_message">【 空き %1$d 】 に保存しました</string>
+    <string name="contact_number_format">連絡%1$s</string>
 
     <!-- Settings Dialog -->
     <string name="dialog_settings_title">設定</string>
@@ -57,14 +50,11 @@
     <string name="settings_eraser_size">黒板消しの円の広さ: %1$d</string>
     <string name="settings_section_display">表示設定</string>
     <string name="settings_display_date">黒板の日付表示</string>
-    <string name="settings_display_theme_todo">• テーマ変更（予定）</string>
     <string name="settings_section_notification">通知設定</string>
     <string name="settings_notification_quick_access">クイックアクセス通知</string>
     <string name="settings_notification_quick_access_desc">通知バーに常駐して素早くアプリを開けます（省電力）</string>
     <string name="settings_section_file">ファイル設定</string>
     <string name="settings_file_export_bg">PNG Export時の背景</string>
-    <string name="settings_file_autosave_todo">• 自動保存機能（予定）</string>
-    <string name="settings_file_backup_todo">• バックアップ機能（予定）</string>
     <string name="dialog_close">閉じる</string>
 
     <!-- About Dialog -->

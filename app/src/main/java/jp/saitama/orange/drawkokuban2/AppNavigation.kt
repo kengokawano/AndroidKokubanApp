@@ -175,7 +175,7 @@ fun AppNavigation() {
                             scope.launch {
                                 val job = launch {
                                                                         snackbarHostState.showSnackbar(
-                                        message = "【 空き ${slot} 】 に保存しました",
+                                        message = context.getString(R.string.save_success_message, slot),
                                         duration = SnackbarDuration.Indefinite
                                     )
                                 }
@@ -414,7 +414,7 @@ private fun ChalkboardScreenContent(
             title = {
                 if (editMode == EditMode.EDIT) {
                     currentSlot?.let { slot ->
-                        val headerText = "連絡${slot.toString().padStart(2, '0')}"
+                        val headerText = stringResource(R.string.contact_number_format, slot.toString().padStart(2, '0'))
                         Text(
                             headerText,
                             color = Color.White,
