@@ -133,7 +133,7 @@ fun ToolSelector(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 24.dp),
+            .padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFF1A3A2A)
         )

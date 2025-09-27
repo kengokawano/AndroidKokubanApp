@@ -1,5 +1,6 @@
 package jp.saitama.orange.drawkokuban2
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -71,11 +72,33 @@ class GameActivity : ComponentActivity() {
 
 @Composable
 fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        WoodTextureBackground()
+        // ヘッダ
+        @OptIn(ExperimentalMaterial3Api::class)
+        TopAppBar(
+            title = { Text(stringResource(R.string.app_name), color = Color.White) },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color(0xFF0B2E1A)
+            ),
+            actions = {
+                IconButton(onClick = onClose) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "閉じる",
+                        tint = Color.White
+                    )
+                }
+            }
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            WoodTextureBackground()
 
         // 左上の連勝数表示
         Card(
@@ -95,26 +118,12 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
             )
         }
 
-        // 右上のバツボタン
-        IconButton(
-            onClick = onClose,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        ) {
-            Icon(
-                Icons.Default.Close,
-                contentDescription = "閉じる",
-                tint = Color.White,
-                modifier = Modifier.size(32.dp)
-            )
-        }
 
         // 盤面を絶対的な中央に固定
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(8.dp),
             contentAlignment = Alignment.Center
         ) {
             // ゲーム盤面（常に中央固定、縦横比14:11）
@@ -124,6 +133,56 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
                     .aspectRatio(BOARD_WIDTH.toFloat() / BOARD_HEIGHT.toFloat()),
                 gameViewModel = gameViewModel
             )
+
+            // ルール表示（ゲーム開始前のみ、中央に表示）
+            if (gameViewModel.gameState.gameMode == GameMode.SINGLE_PLAYER && gameViewModel.gameState.board.all { row -> row.all { it == CellState.EMPTY } }) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth(0.95f)
+                        .padding(8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xE0000000) // より濃い半透明黒
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(R.string.game_rules_title),
+                            color = Color.Yellow,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Text(
+                                text = stringResource(R.string.game_rule_1),
+                                color = Color.White,
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = stringResource(R.string.game_rule_2),
+                                color = Color.White,
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = stringResource(R.string.game_rule_3),
+                                color = Color.White,
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = stringResource(R.string.game_rule_4),
+                                color = Color.White,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         Column(
@@ -143,84 +202,8 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 日直表示
-            val context = LocalContext.current
-            val dutyStudent = remember { StudentNameManager.getTodaysDutyStudent(context) }
-            Text(
-                text = stringResource(R.string.duty_student_label) + " $dutyStudent",
-                fontSize = 16.sp,
-                color = Color.Yellow,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // ゲーム開始（初期画面でのみ表示）
-            if (gameViewModel.gameState.board.all { row -> row.all { it == CellState.EMPTY } }) {
-                Button(
-                    onClick = {
-                        gameViewModel.startCpuGame()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White
-                    )
-                ) {
-                    Text(
-                        stringResource(R.string.game_start_button),
-                        color = Color.Black,
-                        fontSize = 14.sp
-                    )
-                }
-
                 Spacer(modifier = Modifier.height(8.dp))
-            }
 
-            // ルール表示（ゲーム開始前のみ）
-            if (gameViewModel.gameState.gameMode == GameMode.SINGLE_PLAYER && gameViewModel.gameState.board.all { row -> row.all { it == CellState.EMPTY } }) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0x80000000) // 半透明黒
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.game_rules_title),
-                            color = Color.Yellow,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.game_rule_1),
-                            color = Color.White,
-                            fontSize = 12.sp
-                        )
-                        Text(
-                            text = stringResource(R.string.game_rule_2),
-                            color = Color.White,
-                            fontSize = 12.sp
-                        )
-                        Text(
-                            text = stringResource(R.string.game_rule_3),
-                            color = Color.White,
-                            fontSize = 12.sp
-                        )
-                        Text(
-                            text = stringResource(R.string.game_rule_4),
-                            color = Color.White,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
 
             // ゲーム情報表示
             if (gameViewModel.gameState.gameMode == GameMode.VS_CPU) {
@@ -243,7 +226,7 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
                     color = if (gameViewModel.gameState.playerIsWhite) Color.White else Color.Red,
                     fontSize = 20.sp
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+
             }
             }
 
@@ -251,6 +234,25 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+
+            // ゲーム開始（初期画面でのみ表示）
+            if (gameViewModel.gameState.board.all { row -> row.all { it == CellState.EMPTY } } && gameViewModel.gameState.gameMode == GameMode.SINGLE_PLAYER) {
+                Button(
+                    onClick = {
+                        gameViewModel.startCpuGame()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White
+                    )
+                ) {
+                    Text(
+                        stringResource(R.string.game_start_button),
+                        color = Color.Black,
+                        fontSize = 14.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             // 現在の状況表示
             if (gameViewModel.gameState.isWaitingForCpu) {
@@ -340,6 +342,7 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
                 }
             }
             }
+        }
         }
     }
 }
