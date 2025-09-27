@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">黒板太一2</string>
+    <string name="app_name">黒板大将</string>
 
     <!-- ツールメニュー -->
     <string name="tool_white">白</string>
@@ -58,7 +58,7 @@
     <string name="dialog_close">閉じる</string>
 
     <!-- About Dialog -->
-    <string name="about_title">黒板太一2について</string>
+    <string name="about_title">黒板大将について</string>
     <string name="app_name_english">Chalkboard Taichi 2</string>
     <string name="app_description">デジタル黒板描画アプリケーション</string>
     <string name="game_name">黒板テトリス</string>
@@ -75,9 +75,9 @@
     <string name="about_feature_i18n">✓ 多言語対応（日本語・英語）</string>
     <string name="about_feature_wood_bg">✓ 木目テクスチャ背景</string>
     <string name="about_section_developer">開発者情報</string>
-    <string name="about_dev_name">開発者: Orange Saitama</string>
+    <string name="about_dev_name">開発者: Orange Dev</string>
     <string name="about_dev_tech">技術: Kotlin, Jetpack Compose</string>
-    <string name="about_dev_copyright">© 2024 Orange Saitama</string>
+    <string name="about_dev_copyright">© 2024 Orange Dev</string>
     <string name="about_app_target_audience">このアプリは教育現場での利用を想定して開発されました。</string>
 
     <!-- Game UI -->

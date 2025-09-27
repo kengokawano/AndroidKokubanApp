@@ -80,16 +80,25 @@ fun AppNavigation() {
     var thinPenSize by remember { mutableStateOf(prefs.getFloat("thin_pen_size", 6f)) }
     var thickPenSize by remember { mutableStateOf(prefs.getFloat("thick_pen_size", 18f)) }
     var eraserRadius by remember { mutableStateOf(prefs.getFloat("eraser_radius", 48f)) }
-    var exportWithBackground by remember { mutableStateOf(prefs.getBoolean("export_with_background", true)) }
+    var exportWithBackground by remember {
+        mutableStateOf(
+            prefs.getBoolean(
+                "export_with_background",
+                true
+            )
+        )
+    }
     var quickAccessNotification by remember {
-        val appPrefs = context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+        val appPrefs =
+            context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
         mutableStateOf(appPrefs.getBoolean("quick_access_notification", false))
     }
 
     // 起動時の初期化
     LaunchedEffect(Unit) {
         // SharedPreferencesから前回開いたスロット番号を取得
-        val prefs = context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
+        val prefs =
+            context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
         val lastSlot = prefs.getInt("last_slot", 1)
 
         currentSlot = lastSlot
@@ -132,7 +141,10 @@ fun AppNavigation() {
                             viewModel.createNewBitmap(context)
                         }
                         // 選択したスロットを記録
-                        val prefs = context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
+                        val prefs = context.getSharedPreferences(
+                            "chalkboard_prefs",
+                            android.content.Context.MODE_PRIVATE
+                        )
                         prefs.edit().putInt("last_slot", slotNumber).apply()
                         scope.launch {
                             drawerState.close()
@@ -158,63 +170,72 @@ fun AppNavigation() {
             } else {
                 // メイン描画画面
                 ChalkboardScreenWithControls(
-                viewModel = viewModel,
-                currentSlot = currentSlot,
-                editMode = editMode,
-                snackbarHostState = snackbarHostState,
-                onNavigateToFileManager = {
-                    scope.launch {
-                        drawerState.open()
-                    }
-                },
-                onSave = {
-                    currentSlot?.let { slot ->
-                        val result = viewModel.saveBitmap(context, slot)
-                        if (result != null) {
-                            // 保存成功時にSnackbarを表示
-                            scope.launch {
-                                val job = launch {
-                                                                        snackbarHostState.showSnackbar(
-                                        message = context.getString(R.string.save_success_message, slot),
-                                        duration = SnackbarDuration.Indefinite
-                                    )
+                    viewModel = viewModel,
+                    currentSlot = currentSlot,
+                    editMode = editMode,
+                    snackbarHostState = snackbarHostState,
+                    onNavigateToFileManager = {
+                        scope.launch {
+                            drawerState.open()
+                        }
+                    },
+                    onSave = {
+                        currentSlot?.let { slot ->
+                            val result = viewModel.saveBitmap(context, slot)
+                            if (result != null) {
+                                // 保存成功時にSnackbarを表示
+                                scope.launch {
+                                    val job = launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = context.getString(
+                                                R.string.save_success_message,
+                                                slot
+                                            ),
+                                            duration = SnackbarDuration.Indefinite
+                                        )
+                                    }
+                                    delay(2000) // 1秒後に消す
+                                    snackbarHostState.currentSnackbarData?.dismiss()
                                 }
-                                delay(2000) // 1秒後に消す
-                                snackbarHostState.currentSnackbarData?.dismiss()
+                                // 保存時に最後に開いたスロットを記録
+                                val prefs = context.getSharedPreferences(
+                                    "chalkboard_prefs",
+                                    android.content.Context.MODE_PRIVATE
+                                )
+                                prefs.edit().putInt("last_slot", slot).apply()
+                                // ファイルマネージャーの更新をトリガー
+                                refreshTrigger++
                             }
-                            // 保存時に最後に開いたスロットを記録
-                            val prefs = context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
-                            prefs.edit().putInt("last_slot", slot).apply()
-                            // ファイルマネージャーの更新をトリガー
-                            refreshTrigger++
                         }
-                    }
-                },
-                onShowSettings = { showSettings = true },
-                onShowAbout = { showAbout = true },
-                onExport = {
-                    val success = viewModel.exportToPng(context)
-                    scope.launch {
-                        val message = if (success) {
-                            context.getString(R.string.export_success)
-                        } else {
-                            context.getString(R.string.export_failed)
+                    },
+                    onShowSettings = { showSettings = true },
+                    onShowAbout = { showAbout = true },
+                    onExport = {
+                        val success = viewModel.exportToPng(context)
+                        scope.launch {
+                            val message = if (success) {
+                                context.getString(R.string.export_success)
+                            } else {
+                                context.getString(R.string.export_failed)
+                            }
+                            snackbarHostState.showSnackbar(
+                                message = message,
+                                duration = SnackbarDuration.Short
+                            )
                         }
-                        snackbarHostState.showSnackbar(
-                            message = message,
-                            duration = SnackbarDuration.Short
+                    },
+                    showDateOverlay = showDateOverlay,
+                    onDateOverlayChanged = { newValue ->
+                        showDateOverlay = newValue
+                        // SharedPreferencesに保存
+                        context.getSharedPreferences(
+                            "app_settings",
+                            android.content.Context.MODE_PRIVATE
                         )
+                            .edit()
+                            .putBoolean("show_date_overlay", newValue)
+                            .apply()
                     }
-                },
-                showDateOverlay = showDateOverlay,
-                onDateOverlayChanged = { newValue ->
-                    showDateOverlay = newValue
-                    // SharedPreferencesに保存
-                    context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
-                        .edit()
-                        .putBoolean("show_date_overlay", newValue)
-                        .apply()
-                }
                 )
             }
         }
@@ -226,7 +247,10 @@ fun AppNavigation() {
                 onDateOverlayChanged = { newValue ->
                     showDateOverlay = newValue
                     // SharedPreferencesに保存
-                    context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+                    context.getSharedPreferences(
+                        "app_settings",
+                        android.content.Context.MODE_PRIVATE
+                    )
                         .edit()
                         .putBoolean("show_date_overlay", newValue)
                         .apply()
@@ -255,7 +279,10 @@ fun AppNavigation() {
                 onQuickAccessNotificationChanged = { newValue ->
                     quickAccessNotification = newValue
                     // app_settingsに保存
-                    context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+                    context.getSharedPreferences(
+                        "app_settings",
+                        android.content.Context.MODE_PRIVATE
+                    )
                         .edit()
                         .putBoolean("quick_access_notification", newValue)
                         .apply()
@@ -306,9 +333,17 @@ fun ChalkboardScreenWithControls(
     var thinPenSize by remember { mutableStateOf(prefs.getFloat("thin_pen_size", 6f)) }
     var thickPenSize by remember { mutableStateOf(prefs.getFloat("thick_pen_size", 18f)) }
     var eraserRadius by remember { mutableStateOf(prefs.getFloat("eraser_radius", 48f)) }
-    var exportWithBackground by remember { mutableStateOf(prefs.getBoolean("export_with_background", true)) }
+    var exportWithBackground by remember {
+        mutableStateOf(
+            prefs.getBoolean(
+                "export_with_background",
+                true
+            )
+        )
+    }
     var quickAccessNotification by remember {
-        val appPrefs = context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+        val appPrefs =
+            context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
         mutableStateOf(appPrefs.getBoolean("quick_access_notification", false))
     }
 
@@ -414,7 +449,10 @@ private fun ChalkboardScreenContent(
             title = {
                 if (editMode == EditMode.EDIT) {
                     currentSlot?.let { slot ->
-                        val headerText = stringResource(R.string.contact_number_format, slot.toString().padStart(2, '0'))
+                        val headerText = stringResource(
+                            R.string.contact_number_format,
+                            slot.toString().padStart(2, '0')
+                        )
                         Text(
                             headerText,
                             color = Color.White,
@@ -524,7 +562,8 @@ private fun ChalkboardScreenContent(
 
                         if (currentBitmap != null &&
                             (currentBitmap.width != newSize.width.toInt() ||
-                             currentBitmap.height != newSize.height.toInt())) {
+                                    currentBitmap.height != newSize.height.toInt())
+                        ) {
                             // ビットマップのサイズが違う場合はリサイズ
                             viewModel.resizeBitmapToCanvas(
                                 newSize.width.toInt(),
@@ -534,7 +573,11 @@ private fun ChalkboardScreenContent(
                         }
                     }
                 }
-                .pointerInput(viewModel.state.penColor, viewModel.state.isThick, viewModel.state.isEraser) {
+                .pointerInput(
+                    viewModel.state.penColor,
+                    viewModel.state.isThick,
+                    viewModel.state.isEraser
+                ) {
                     detectDragGestures(
                         onDragStart = { offset ->
                             viewModel.startDrawing(offset)
@@ -704,8 +747,10 @@ fun DateOverlay(modifier: Modifier = Modifier) {
 }
 
 private fun getJapaneseMonth(month: Int): String {
-    val months = arrayOf("一月", "二月", "三月", "四月", "五月", "六月",
-                        "七月", "八月", "九月", "十月", "十一月", "十二月")
+    val months = arrayOf(
+        "一月", "二月", "三月", "四月", "五月", "六月",
+        "七月", "八月", "九月", "十月", "十一月", "十二月"
+    )
     return if (month in 1..12) months[month - 1] else "？月"
 }
 
@@ -760,7 +805,11 @@ fun SettingsDialog(
         if (isGranted) {
             onQuickAccessNotificationChanged(true)
         } else {
-            android.widget.Toast.makeText(context, "通知権限が拒否されました。設定から手動で許可してください。", android.widget.Toast.LENGTH_LONG).show()
+            android.widget.Toast.makeText(
+                context,
+                "通知権限が拒否されました。設定から手動で許可してください。",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
         }
     }
     AlertDialog(
@@ -893,10 +942,14 @@ fun SettingsDialog(
                             if (newValue) {
                                 // 通知権限をチェックして必要に応じて要求
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    when (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)) {
+                                    when (ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.POST_NOTIFICATIONS
+                                    )) {
                                         PackageManager.PERMISSION_GRANTED -> {
                                             onQuickAccessNotificationChanged(true)
                                         }
+
                                         else -> {
                                             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                         }
@@ -949,21 +1002,50 @@ fun AboutDialog(
             ) {
                 // アプリ基本情報
                 Text(
-                    stringResource(R.string.app_name),
-                    fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    stringResource(R.string.app_name_english),
-                    fontSize = 14.sp
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
                     stringResource(R.string.app_description),
                     fontSize = 16.sp
                 )
+
+
+
                 Spacer(modifier = Modifier.height(16.dp))
+
+                // バージョン情報
+                Text(
+                    stringResource(R.string.about_section_app_info),
+                    fontSize = 16.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(stringResource(R.string.about_app_version_label) + " ${BuildConfig.VERSION_NAME}")
+                Text(stringResource(R.string.about_app_os_label) + " Android 7.0以上")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 主な機能
+                Text(
+                    stringResource(R.string.about_section_features),
+                    fontSize = 16.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(stringResource(R.string.about_feature_drawing))
+                Text(stringResource(R.string.about_feature_pen_thickness))
+                Text(stringResource(R.string.about_feature_eraser))
+                Text(stringResource(R.string.about_feature_file_slots))
+                Text(stringResource(R.string.about_feature_i18n))
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 開発者情報
+                Text(
+                    stringResource(R.string.about_section_developer),
+                    fontSize = 16.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(stringResource(R.string.about_dev_name))
+                Text(stringResource(R.string.about_dev_tech))
+                Text(stringResource(R.string.about_dev_copyright))
+
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // 隠しゲーム起動ボタン
                 Button(
@@ -979,52 +1061,6 @@ fun AboutDialog(
                         fontSize = 16.sp
                     )
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // バージョン情報
-                Text(
-                    stringResource(R.string.about_section_app_info),
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(stringResource(R.string.about_app_version_label) + " 2.0.0")
-                Text(stringResource(R.string.about_app_build_date_label) + " 2024年9月24日")
-                Text(stringResource(R.string.about_app_os_label) + " Android 8.0以上")
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 主な機能
-                Text(
-                    stringResource(R.string.about_section_features),
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(stringResource(R.string.about_feature_drawing))
-                Text(stringResource(R.string.about_feature_pen_thickness))
-                Text(stringResource(R.string.about_feature_eraser))
-                Text(stringResource(R.string.about_feature_file_slots))
-                Text(stringResource(R.string.about_feature_naming))
-                Text(stringResource(R.string.about_feature_i18n))
-                Text(stringResource(R.string.about_feature_wood_bg))
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 開発者情報
-                Text(
-                    stringResource(R.string.about_section_developer),
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(stringResource(R.string.about_dev_name))
-                Text(stringResource(R.string.about_dev_tech))
-                Text(stringResource(R.string.about_dev_copyright))
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    stringResource(R.string.about_app_target_audience),
-                    fontSize = 12.sp
-                )
             }
         },
         confirmButton = {
