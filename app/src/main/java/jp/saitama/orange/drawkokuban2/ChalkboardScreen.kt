@@ -79,13 +79,6 @@ fun ChalkboardScreen(
                         coordinates.size.width.toFloat(),
                         coordinates.size.height.toFloat()
                     )
-                    if (viewModel.state.bitmap == null && canvasSize.width > 0 && canvasSize.height > 0) {
-                        viewModel.initializeBitmap(
-                            canvasSize.width.toInt(),
-                            canvasSize.height.toInt(),
-                            context
-                        )
-                    }
                 }
                 .pointerInput(viewModel.state.penColor, viewModel.state.isThick, viewModel.state.isEraser) {
                     detectDragGestures(

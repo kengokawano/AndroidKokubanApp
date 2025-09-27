@@ -43,6 +43,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import android.content.pm.PackageManager
 
 enum class EditMode {
     EDIT      // 編集モード（指定スロットに保存）
@@ -75,10 +81,13 @@ fun AppNavigation() {
     var thickPenSize by remember { mutableStateOf(prefs.getFloat("thick_pen_size", 18f)) }
     var eraserRadius by remember { mutableStateOf(prefs.getFloat("eraser_radius", 48f)) }
     var exportWithBackground by remember { mutableStateOf(prefs.getBoolean("export_with_background", true)) }
+    var quickAccessNotification by remember {
+        val appPrefs = context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+        mutableStateOf(appPrefs.getBoolean("quick_access_notification", false))
+    }
 
     // 起動時の初期化
     LaunchedEffect(Unit) {
-        // ローディング開始時の状態設定
         // SharedPreferencesから前回開いたスロット番号を取得
         val prefs = context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
         val lastSlot = prefs.getInt("last_slot", 1)
@@ -100,9 +109,9 @@ fun AppNavigation() {
                 currentSlot = 1
                 viewModel.loadBitmap(context, 1)
             } else {
-                // 何もない場合はスロット1で新規作成
+                // 何もない場合はスロット1で新規作成（適当なサイズで）
                 currentSlot = 1
-                viewModel.createNewBitmap(context)
+                viewModel.initializeBitmap(1080, 1920, context)
             }
         }
     }
@@ -242,6 +251,20 @@ fun AppNavigation() {
                     exportWithBackground = newValue
                     prefs.edit().putBoolean("export_with_background", newValue).apply()
                 },
+                quickAccessNotification = quickAccessNotification,
+                onQuickAccessNotificationChanged = { newValue ->
+                    quickAccessNotification = newValue
+                    // app_settingsに保存
+                    context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+                        .edit()
+                        .putBoolean("quick_access_notification", newValue)
+                        .apply()
+                    if (newValue) {
+                        NotificationService.startService(context)
+                    } else {
+                        NotificationService.stopService(context)
+                    }
+                },
                 onDismiss = { showSettings = false }
             )
         }
@@ -284,6 +307,10 @@ fun ChalkboardScreenWithControls(
     var thickPenSize by remember { mutableStateOf(prefs.getFloat("thick_pen_size", 18f)) }
     var eraserRadius by remember { mutableStateOf(prefs.getFloat("eraser_radius", 48f)) }
     var exportWithBackground by remember { mutableStateOf(prefs.getBoolean("export_with_background", true)) }
+    var quickAccessNotification by remember {
+        val appPrefs = context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+        mutableStateOf(appPrefs.getBoolean("quick_access_notification", false))
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // メインの黒板画面
@@ -331,6 +358,20 @@ fun ChalkboardScreenWithControls(
                 exportWithBackground = newValue
                 prefs.edit().putBoolean("export_with_background", newValue).apply()
             },
+            quickAccessNotification = quickAccessNotification,
+            onQuickAccessNotificationChanged = { newValue ->
+                quickAccessNotification = newValue
+                // app_settingsに保存
+                context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("quick_access_notification", newValue)
+                    .apply()
+                if (newValue) {
+                    NotificationService.startService(context)
+                } else {
+                    NotificationService.stopService(context)
+                }
+            },
             onDismiss = { showSettings = false }
         )
     }
@@ -375,11 +416,7 @@ private fun ChalkboardScreenContent(
                     currentSlot?.let { slot ->
                         // 現在のファイルの保存日時を取得
                         val file = java.io.File(context.filesDir, "chalkboard_$slot.png")
-                        val headerText = if (file.exists()) {
-                            "連絡${slot.toString().padStart(2, '0')}"
-                        } else {
-                            "新規作成"
-                        }
+                        val headerText = "連絡${slot.toString().padStart(2, '0')}"
                         Text(
                             headerText,
                             color = Color.White,
@@ -483,19 +520,13 @@ private fun ChalkboardScreenContent(
                     )
                     val currentBitmap = viewModel.state.bitmap
 
-                    // 新しいサイズが有効な場合の処理
-                    if (newSize.width > 0 && newSize.height > 0 && !viewModel.state.isLoading) {
+                    // キャンバスサイズが変わった場合のリサイズのみ
+                    if (newSize.width > 0 && newSize.height > 0) {
                         canvasSize = newSize
 
-                        if (currentBitmap == null) {
-                            // ビットマップがない場合は新規作成
-                            viewModel.initializeBitmap(
-                                newSize.width.toInt(),
-                                newSize.height.toInt(),
-                                context
-                            )
-                        } else if (currentBitmap.width != newSize.width.toInt() ||
-                                   currentBitmap.height != newSize.height.toInt()) {
+                        if (currentBitmap != null &&
+                            (currentBitmap.width != newSize.width.toInt() ||
+                             currentBitmap.height != newSize.height.toInt())) {
                             // ビットマップのサイズが違う場合はリサイズ
                             viewModel.resizeBitmapToCanvas(
                                 newSize.width.toInt(),
@@ -708,8 +739,22 @@ fun SettingsDialog(
     onEraserRadiusChanged: (Float) -> Unit,
     exportWithBackground: Boolean,
     onExportWithBackgroundChanged: (Boolean) -> Unit,
+    quickAccessNotification: Boolean,
+    onQuickAccessNotificationChanged: (Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
+
+    // 通知権限要求のランチャー
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            onQuickAccessNotificationChanged(true)
+        } else {
+            android.widget.Toast.makeText(context, "通知権限が拒否されました。設定から手動で許可してください。", android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -808,6 +853,55 @@ fun SettingsDialog(
                     )
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 通知設定セクション
+                Text(
+                    stringResource(R.string.settings_section_notification),
+                    fontSize = 16.sp,
+                    color = Color(255, 240, 130)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // クイックアクセス通知設定
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(stringResource(R.string.settings_notification_quick_access))
+                        Text(
+                            stringResource(R.string.settings_notification_quick_access_desc),
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    Switch(
+                        checked = quickAccessNotification,
+                        onCheckedChange = { newValue ->
+                            if (newValue) {
+                                // 通知権限をチェックして必要に応じて要求
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    when (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)) {
+                                        PackageManager.PERMISSION_GRANTED -> {
+                                            onQuickAccessNotificationChanged(true)
+                                        }
+                                        else -> {
+                                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        }
+                                    }
+                                } else {
+                                    onQuickAccessNotificationChanged(true)
+                                }
+                            } else {
+                                onQuickAccessNotificationChanged(false)
+                            }
+                        }
+                    )
+                }
 
             }
         },

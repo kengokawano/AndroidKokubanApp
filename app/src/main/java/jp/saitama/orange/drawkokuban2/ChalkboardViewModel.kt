@@ -142,7 +142,11 @@ class ChalkboardViewModel : ViewModel() {
     fun clearAll(context: Context? = null) {
         val bitmap = state.bitmap ?: return
         clearAll(bitmap, context)
-        state = state.copy(showClearAllDialog = false)
+        state = state.copy(
+            showClearAllDialog = false,
+            penColor = PenColor.WHITE,
+            isEraser = false
+        )
     }
 
     fun saveBitmap(context: Context, slotNumber: Int? = null): SlotMeta? {
@@ -184,6 +188,7 @@ class ChalkboardViewModel : ViewModel() {
         if (bitmap != null) {
             state = state.copy(bitmap = bitmap, isLoading = false)
         }
+        // ファイルが存在しない場合は何もしない（ChalkboardScreenで新規作成される）
     }
 
     fun resizeBitmapToCanvas(width: Int, height: Int, context: Context) {
