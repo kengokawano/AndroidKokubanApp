@@ -8,6 +8,10 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+// 盤面サイズ定数
+const val BOARD_WIDTH = 11   // 横
+const val BOARD_HEIGHT = 14  // 縦
+
 enum class CellState {
     EMPTY,
     WHITE,  // プレイヤー（先攻）
@@ -32,7 +36,7 @@ enum class CpuDifficulty {
 }
 
 data class GameState(
-    val board: Array<Array<CellState>> = Array(12) { Array(12) { CellState.EMPTY } },
+    val board: Array<Array<CellState>> = Array(BOARD_HEIGHT) { Array(BOARD_WIDTH) { CellState.EMPTY } },
     val currentPlayer: Player = Player.WHITE,
     val winner: Player? = null,
     val isGameOver: Boolean = false,
@@ -108,6 +112,11 @@ class GameViewModel : ViewModel() {
             return
         }
 
+        // validMovesリストにない場合は配置不可
+        if (!gameState.validMoves.contains(Pair(row, col))) {
+            return
+        }
+
         // セルを現在のプレイヤーの色で塗りつぶす
         val newBoard = gameState.board.map { it.clone() }.toTypedArray()
         val cellState = if (gameState.currentPlayer == Player.WHITE) CellState.WHITE else CellState.RED
@@ -171,14 +180,14 @@ class GameViewModel : ViewModel() {
 
     private fun isValidPlacement(row: Int, col: Int): Boolean {
         // 物理法則：最下段または既存ブロックの上でなければならない
-        if (row != 11 && gameState.board[row + 1][col] == CellState.EMPTY) {
+        if (row != BOARD_HEIGHT - 1 && gameState.board[row + 1][col] == CellState.EMPTY) {
             return false
         }
 
         // 初手（盤面が空）なら最下段のどこでも可
         val isEmpty = gameState.board.all { row -> row.all { it == CellState.EMPTY } }
         if (isEmpty) {
-            return row == 11  // 最下段のみ
+            return row == BOARD_HEIGHT - 1  // 最下段のみ
         }
 
         // 隣接ルール：8方向のいずれかに既存ブロックが必要
@@ -191,7 +200,7 @@ class GameViewModel : ViewModel() {
         for ((dRow, dCol) in directions) {
             val newRow = row + dRow
             val newCol = col + dCol
-            if (newRow in 0..11 && newCol in 0..11 && gameState.board[newRow][newCol] != CellState.EMPTY) {
+            if (newRow in 0 until BOARD_HEIGHT && newCol in 0 until BOARD_WIDTH && gameState.board[newRow][newCol] != CellState.EMPTY) {
                 return true
             }
         }
@@ -218,7 +227,7 @@ class GameViewModel : ViewModel() {
             // 正方向にチェック
             var r = row + dRow
             var c = col + dCol
-            while (r in 0..11 && c in 0..11 && board[r][c] == cellState) {
+            while (r in 0 until BOARD_HEIGHT && c in 0 until BOARD_WIDTH && board[r][c] == cellState) {
                 lineCoords.add(Pair(r, c))
                 r += dRow
                 c += dCol
@@ -227,7 +236,7 @@ class GameViewModel : ViewModel() {
             // 逆方向にチェック
             r = row - dRow
             c = col - dCol
-            while (r in 0..11 && c in 0..11 && board[r][c] == cellState) {
+            while (r in 0 until BOARD_HEIGHT && c in 0 until BOARD_WIDTH && board[r][c] == cellState) {
                 lineCoords.add(0, Pair(r, c)) // 先頭に追加
                 r -= dRow
                 c -= dCol
@@ -264,11 +273,18 @@ class GameViewModel : ViewModel() {
             playerWinStreak = currentWinStreak
         )
         val validMoves = getValidMovesForBoard(newState.board)
-        gameState = newState.copy(validMoves = validMoves)
+
+        // CPUが先攻（白）の場合は待機状態も設定
+        val finalState = if (!playerIsWhite) {
+            newState.copy(validMoves = validMoves, isWaitingForCpu = true)
+        } else {
+            newState.copy(validMoves = validMoves)
+        }
+
+        gameState = finalState
 
         // CPUが先攻（白）の場合、すぐにCPUの手を実行
         if (!playerIsWhite) {
-            gameState = gameState.copy(isWaitingForCpu = true)
             viewModelScope.launch {
                 delay(1000) // CPU思考時間
                 makeCpuMove()
@@ -337,8 +353,8 @@ class GameViewModel : ViewModel() {
 
     private fun getValidMoves(): List<Pair<Int, Int>> {
         val validMoves = mutableListOf<Pair<Int, Int>>()
-        for (row in 0..11) {
-            for (col in 0..11) {
+        for (row in 0 until BOARD_HEIGHT) {
+            for (col in 0 until BOARD_WIDTH) {
                 if (gameState.board[row][col] == CellState.EMPTY && isValidPlacement(row, col)) {
                     validMoves.add(Pair(row, col))
                 }
@@ -480,7 +496,7 @@ class GameViewModel : ViewModel() {
             // 正方向にチェック
             var r = row + dRow
             var c = col + dCol
-            while (r in 0..11 && c in 0..11 && board[r][c] == cellState) {
+            while (r in 0 until BOARD_HEIGHT && c in 0 until BOARD_WIDTH && board[r][c] == cellState) {
                 count++
                 r += dRow
                 c += dCol
@@ -489,7 +505,7 @@ class GameViewModel : ViewModel() {
             // 逆方向にチェック
             r = row - dRow
             c = col - dCol
-            while (r in 0..11 && c in 0..11 && board[r][c] == cellState) {
+            while (r in 0 until BOARD_HEIGHT && c in 0 until BOARD_WIDTH && board[r][c] == cellState) {
                 count++
                 r -= dRow
                 c -= dCol
@@ -503,8 +519,8 @@ class GameViewModel : ViewModel() {
 
     private fun getValidMovesForBoard(board: Array<Array<CellState>>): List<Pair<Int, Int>> {
         val validMoves = mutableListOf<Pair<Int, Int>>()
-        for (row in 0..11) {
-            for (col in 0..11) {
+        for (row in 0 until BOARD_HEIGHT) {
+            for (col in 0 until BOARD_WIDTH) {
                 if (board[row][col] == CellState.EMPTY && isValidPlacementForBoard(board, row, col)) {
                     validMoves.add(Pair(row, col))
                 }
@@ -515,14 +531,14 @@ class GameViewModel : ViewModel() {
 
     private fun isValidPlacementForBoard(board: Array<Array<CellState>>, row: Int, col: Int): Boolean {
         // 物理法則：最下段または既存ブロックの上でなければならない
-        if (row != 11 && board[row + 1][col] == CellState.EMPTY) {
+        if (row != BOARD_HEIGHT - 1 && board[row + 1][col] == CellState.EMPTY) {
             return false
         }
 
         // 初手（盤面が空）なら最下段のどこでも可
         val isEmpty = board.all { row -> row.all { it == CellState.EMPTY } }
         if (isEmpty) {
-            return row == 11  // 最下段のみ
+            return row == BOARD_HEIGHT - 1  // 最下段のみ
         }
 
         // 隣接ルール：8方向のいずれかに既存ブロックが必要
@@ -535,7 +551,7 @@ class GameViewModel : ViewModel() {
         for ((dRow, dCol) in directions) {
             val newRow = row + dRow
             val newCol = col + dCol
-            if (newRow in 0..11 && newCol in 0..11 && board[newRow][newCol] != CellState.EMPTY) {
+            if (newRow in 0 until BOARD_HEIGHT && newCol in 0 until BOARD_WIDTH && board[newRow][newCol] != CellState.EMPTY) {
                 return true
             }
         }

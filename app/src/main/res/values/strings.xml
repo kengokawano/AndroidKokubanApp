@@ -29,7 +29,7 @@
     <string name="dialog_delete">削除</string>
 
     <!-- ファイル管理 -->
-    <string name="file_manager_title">連絡帳</string>
+    <string name="file_manager_title">連絡XX</string>
     <string name="file_empty_message">保存されたファイルがありません</string>
     <string name="file_create_new">新しい黒板を作成</string>
     <string name="file_slot_number">空き %1$d</string>
@@ -52,17 +52,14 @@
     <string name="dialog_settings_title">設定</string>
     <string name="settings_section_app">アプリケーション設定</string>
     <string name="settings_section_drawing">描画設定</string>
-    <string name="settings_pen_thin_size">細いペンサイズ: %1$d</string>
-    <string name="settings_pen_thick_size">太いペンサイズ: %1$d</string>
+    <string name="settings_pen_thin_size">細いペン サイズ: %1$d</string>
+    <string name="settings_pen_thick_size">太いペン サイズ: %1$d</string>
     <string name="settings_eraser_size">黒板消しの円の広さ: %1$d</string>
     <string name="settings_section_display">表示設定</string>
-    <string name="settings_display_date">右上の日付表示</string>
-    <string name="settings_display_wood_bg_todo">• 木目背景の変更（予定）</string>
+    <string name="settings_display_date">黒板の日付表示</string>
     <string name="settings_display_theme_todo">• テーマ変更（予定）</string>
     <string name="settings_section_file">ファイル設定</string>
     <string name="settings_file_export_bg">PNG Export時の背景</string>
-    <string name="settings_file_export_bg_desc_on">緑の背景色でエクスポート</string>
-    <string name="settings_file_export_bg_desc_off">透明な背景でエクスポート</string>
     <string name="settings_file_autosave_todo">• 自動保存機能（予定）</string>
     <string name="settings_file_backup_todo">• バックアップ機能（予定）</string>
     <string name="dialog_close">閉じる</string>
@@ -71,7 +68,7 @@
     <string name="about_title">黒板太一2について</string>
     <string name="app_name_english">Chalkboard Taichi 2</string>
     <string name="app_description">デジタル黒板描画アプリケーション</string>
-    <string name="game_name">黒板大将</string>
+    <string name="game_name">黒板テトリス</string>
     <string name="about_section_app_info">アプリ情報</string>
     <string name="about_app_version_label">バージョン:</string>
     <string name="about_app_build_date_label">ビルド日:</string>
@@ -89,4 +86,15 @@
     <string name="about_dev_tech">技術: Kotlin, Jetpack Compose</string>
     <string name="about_dev_copyright">© 2024 Orange Saitama</string>
     <string name="about_app_target_audience">このアプリは教育現場での利用を想定して開発されました。</string>
+
+    <!-- Game UI -->
+    <string name="game_start_button">ゲーム開始</string>
+    <string name="about_game_button">休み時間</string>
+
+    <!-- Game Rules -->
+    <string name="game_rules_title">ゲームのルール</string>
+    <string name="game_rule_1">・はじめは一番下の好きなところに置けるよ</string>
+    <string name="game_rule_2">・2回目からは隣にくっつけて置いてね</string>
+    <string name="game_rule_3">・ブロックは下に落ちるよ</string>
+    <string name="game_rule_4">・タテ・ヨコ・ナナメに4つ並べたら勝ち！</string>
 </resources>

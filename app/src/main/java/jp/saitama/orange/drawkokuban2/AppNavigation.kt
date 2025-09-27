@@ -376,7 +376,7 @@ private fun ChalkboardScreenContent(
                         // 現在のファイルの保存日時を取得
                         val file = java.io.File(context.filesDir, "chalkboard_$slot.png")
                         val headerText = if (file.exists()) {
-                            "スロット$slot"
+                            "連絡${slot.toString().padStart(2, '0')}"
                         } else {
                             "新規作成"
                         }
@@ -807,11 +807,7 @@ fun SettingsDialog(
                         onCheckedChange = onExportWithBackgroundChanged
                     )
                 }
-                Text(
-                    text = stringResource(if (exportWithBackground) R.string.settings_file_export_bg_desc_on else R.string.settings_file_export_bg_desc_off),
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
+
 
             }
         },
@@ -828,32 +824,6 @@ fun AboutDialog(
     onDismiss: () -> Unit,
     onGameStart: () -> Unit = {}
 ) {
-    var showConfirmationDialog by remember { mutableStateOf(false) }
-
-    if (showConfirmationDialog) {
-        AlertDialog(
-            onDismissRequest = { showConfirmationDialog = false },
-            title = { Text(stringResource(R.string.dialog_game_title)) },
-            text = { Text(stringResource(R.string.dialog_game_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showConfirmationDialog = false
-                        onGameStart()
-                    }
-                ) {
-                    Text(stringResource(R.string.dialog_ok))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showConfirmationDialog = false }
-                ) {
-                    Text(stringResource(R.string.dialog_cancel))
-                }
-            }
-        )
-    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -895,14 +865,14 @@ fun AboutDialog(
 
                 // 隠しゲーム起動ボタン
                 Button(
-                    onClick = { showConfirmationDialog = true },
+                    onClick = { onGameStart() },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF0B2E1A)
                     )
                 ) {
                     Text(
-                        stringResource(R.string.game_name),
+                        stringResource(R.string.about_game_button),
                         color = Color.White,
                         fontSize = 16.sp
                     )

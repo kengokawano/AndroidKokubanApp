@@ -143,7 +143,7 @@ fun FileManagerScreen(
             onDismissRequest = { showDeleteDialog = null },
             title = { Text(stringResource(R.string.dialog_delete_title)) },
             text = {
-                val slotName = "スロット$slotNumber"
+                val slotName = "連絡${slotNumber.toString().padStart(2, '0')}"
                 Text(stringResource(R.string.dialog_delete_message, slotName))
             },
             confirmButton = {
@@ -200,15 +200,34 @@ fun SlotCard(
         ) {
             if (slot.isEmpty) {
                 // 空のスロット
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        "空き${slot.slotNumber}",
-                        color = Color.Gray,
-                        fontSize = 16.sp,
-                        textAlign = TextAlign.Center
-                    )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "空き",
+                            color = Color.Gray,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    // XX数値（左上オーバーレイ）
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(4.dp),
+                        color = Color.Black.copy(alpha = 0.7f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            "${slot.slotNumber.toString().padStart(2, '0')}",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        )
+                    }
                 }
             } else {
                 // データがあるスロット
@@ -229,7 +248,7 @@ fun SlotCard(
                             .background(Color(0xFF0B2E1A))
                     )
 
-                    // スロット名称（左上オーバーレイ）
+                    // XX数値（左上オーバーレイ）
                     Surface(
                         modifier = Modifier
                             .align(Alignment.TopStart)
@@ -238,13 +257,29 @@ fun SlotCard(
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
-                            slot.lastModified?.let {
-                                getSlotNameWithSeconds(it)
-                            } ?: "空き${slot.slotNumber}",
+                            "${slot.slotNumber.toString().padStart(2, '0')}",
                             color = Color.White,
-                            fontSize = 12.sp,
+                            fontSize = 14.sp,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                         )
+                    }
+
+                    // 更新日時（右下オーバーレイ）
+                    slot.lastModified?.let { lastModified ->
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(4.dp),
+                            color = Color.Black.copy(alpha = 0.7f),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                getSlotNameWithSeconds(lastModified),
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                 }
             }
