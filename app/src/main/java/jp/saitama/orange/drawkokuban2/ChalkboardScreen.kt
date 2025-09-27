@@ -20,9 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
@@ -39,7 +37,6 @@ fun ChalkboardScreen(
     viewModel: ChalkboardViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    var canvasSize by remember { mutableStateOf(Size.Zero) }
 
     Column(
         modifier = Modifier
@@ -74,12 +71,6 @@ fun ChalkboardScreen(
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color(0xFF0B2E1A))
                 .border(2.dp, Color.Gray, RoundedCornerShape(8.dp))
-                .onGloballyPositioned { coordinates ->
-                    canvasSize = Size(
-                        coordinates.size.width.toFloat(),
-                        coordinates.size.height.toFloat()
-                    )
-                }
                 .pointerInput(viewModel.state.penColor, viewModel.state.isThick, viewModel.state.isEraser) {
                     detectDragGestures(
                         onDragStart = { offset ->

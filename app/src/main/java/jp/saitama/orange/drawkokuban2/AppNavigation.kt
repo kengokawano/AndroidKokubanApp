@@ -414,8 +414,6 @@ private fun ChalkboardScreenContent(
             title = {
                 if (editMode == EditMode.EDIT) {
                     currentSlot?.let { slot ->
-                        // 現在のファイルの保存日時を取得
-                        val file = java.io.File(context.filesDir, "chalkboard_$slot.png")
                         val headerText = "連絡${slot.toString().padStart(2, '0')}"
                         Text(
                             headerText,

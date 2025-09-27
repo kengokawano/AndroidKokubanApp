@@ -188,7 +188,6 @@ class ChalkboardViewModel : ViewModel() {
         if (bitmap != null) {
             state = state.copy(bitmap = bitmap, isLoading = false)
         }
-        // ファイルが存在しない場合は何もしない（ChalkboardScreenで新規作成される）
     }
 
     fun resizeBitmapToCanvas(width: Int, height: Int, context: Context) {
@@ -298,8 +297,4 @@ class ChalkboardViewModel : ViewModel() {
         return transparentBitmap
     }
 
-    fun updatePenSettings(context: Context) {
-        // 設定値を読み込んで更新する関数（今後実装）
-        // SharedPreferencesから thin_pen_size と thick_pen_size を読み込み
-    }
 }
