@@ -581,7 +581,6 @@ private fun ChalkboardScreenContent(
                 ) {
                     detectTapGestures(
                         onTap = { offset ->
-                            android.util.Log.d("AppNavigation", "TAP at ($offset)")
                             viewModel.drawPoint(offset, context)
                         }
                     )
@@ -593,7 +592,6 @@ private fun ChalkboardScreenContent(
                 ) {
                     detectDragGestures(
                         onDragStart = { offset ->
-                            android.util.Log.d("AppNavigation", "DRAG START at ($offset)")
                             viewModel.startDrawing(offset)
                         },
                         onDrag = { change, _ ->

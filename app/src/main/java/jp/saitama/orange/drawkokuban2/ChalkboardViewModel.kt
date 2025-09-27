@@ -140,14 +140,10 @@ class ChalkboardViewModel : ViewModel() {
     }
 
     fun drawPoint(point: Offset, context: Context) {
-        Log.d("ChalkboardViewModel", "drawPoint called at (${point.x}, ${point.y})")
-        val bitmap = state.bitmap ?: return.also {
-            Log.e("ChalkboardViewModel", "bitmap is null")
-        }
+        val bitmap = state.bitmap ?: return
 
         if (state.isEraser) {
             val thickness = getEraserRadius(context)
-            Log.d("ChalkboardViewModel", "Drawing eraser point with radius: $thickness")
             drawCircle(bitmap, point, thickness, Color.BLACK)
         } else {
             val color = when (state.penColor) {
@@ -155,7 +151,6 @@ class ChalkboardViewModel : ViewModel() {
                 PenColor.RED -> AppColors.RED.toArgb()
             }
             val thickness = getPenThickness(context) / 2f
-            Log.d("ChalkboardViewModel", "Drawing pen point with thickness: $thickness, color: $color")
             drawCircle(bitmap, point, thickness, color)
         }
 
@@ -165,7 +160,6 @@ class ChalkboardViewModel : ViewModel() {
         canvas.drawBitmap(bitmap, 0f, 0f, null)
 
         state = state.copy(bitmap = newBitmap)
-        Log.d("ChalkboardViewModel", "drawPoint completed with new bitmap instance")
     }
 
     fun clearAll(context: Context? = null) {

@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import android.util.Log
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
@@ -39,7 +38,6 @@ private val SELECTED_BORDER_COLOR = Color(0xFFFFD700) // 鮮やかなゴール�
 fun ChalkboardScreen(
     viewModel: ChalkboardViewModel = viewModel()
 ) {
-    Log.d("ChalkboardScreen", "ChalkboardScreen started")
     val context = LocalContext.current
 
     Column(
@@ -68,33 +66,23 @@ fun ChalkboardScreen(
         )
 
         // キャンバス
-        Log.d("ChalkboardScreen", "About to create Box canvas")
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color.Red) // 赤色でタッチ領域を確認
+                .background(Color(0xFF0B2E1A))
                 .border(2.dp, Color.Gray, RoundedCornerShape(8.dp))
-                .pointerInput(Unit) {
-                    Log.d("ChalkboardScreen", "detectTapGestures initialized")
-                    detectTapGestures(
-                        onTap = { offset ->
-                            Log.d("ChalkboardScreen", "TAP detected at ($offset)")
-                            viewModel.drawPoint(offset, context)
-                        }
-                    )
-                }
-                .pointerInput(Unit) {
-                    Log.d("ChalkboardScreen", "detectDragGestures initialized")
+                .pointerInput(viewModel.state.penColor, viewModel.state.isThick, viewModel.state.isEraser) {
                     detectDragGestures(
                         onDragStart = { offset ->
-                            Log.d("ChalkboardScreen", "DRAG START at ($offset)")
-                            viewModel.drawPoint(offset, context)
+                            viewModel.startDrawing(offset)
                         },
                         onDrag = { change, _ ->
-                            Log.d("ChalkboardScreen", "DRAG at (${change.position})")
-                            viewModel.drawPoint(change.position, context)
+                            viewModel.continueDrawing(change.position, context)
+                        },
+                        onDragEnd = {
+                            viewModel.endDrawing()
                         }
                     )
                 }
