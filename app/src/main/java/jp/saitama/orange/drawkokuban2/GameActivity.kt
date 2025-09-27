@@ -373,6 +373,11 @@ fun GameBoard(modifier: Modifier = Modifier, gameViewModel: GameViewModel) {
         Canvas(
             modifier = Modifier.fillMaxSize().pointerInput(Unit) {
             detectTapGestures { offset ->
+                // アニメーション中はタップを無効にする
+                if (blockAnimations.isNotEmpty()) {
+                    return@detectTapGestures
+                }
+
                 val boardWidth = kotlin.math.min(size.width, size.height)
                 val boardHeight = boardWidth * BOARD_HEIGHT.toFloat() / BOARD_WIDTH.toFloat()
                 val cellWidth = boardWidth / BOARD_WIDTH.toFloat()
