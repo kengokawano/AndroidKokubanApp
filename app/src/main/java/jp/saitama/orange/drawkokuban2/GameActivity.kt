@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import jp.saitama.orange.drawkokuban2.ui.theme.MyApplicationTheme
 import androidx.compose.animation.core.Animatable
@@ -35,6 +36,16 @@ import kotlinx.coroutines.launch
 class GameActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Activity起動時に必ず設定をチェックして通知サービスを開始
+        val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
+        val quickAccessEnabled = prefs.getBoolean("quick_access_notification", false)
+
+        if (quickAccessEnabled) {
+            // 設定がONなら強制的に通知サービスを開始
+            NotificationService.startService(this)
+        }
+
         setContent {
             MyApplicationTheme {
                 val gameViewModel: GameViewModel = viewModel()
@@ -43,6 +54,17 @@ class GameActivity : ComponentActivity() {
                     gameViewModel = gameViewModel
                 )
             }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // アプリが最小化（ホーム画面に戻る）された時、設定に応じて通知サービスを開始
+        val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
+        val quickAccessEnabled = prefs.getBoolean("quick_access_notification", false)
+
+        if (quickAccessEnabled) {
+            NotificationService.startService(this)
         }
     }
 }
@@ -120,6 +142,18 @@ fun GameScreen(onClose: () -> Unit, gameViewModel: GameViewModel) {
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 日直表示
+            val context = LocalContext.current
+            val dutyStudent = remember { StudentNameManager.getTodaysDutyStudent(context) }
+            Text(
+                text = stringResource(R.string.duty_student_label) + " $dutyStudent",
+                fontSize = 16.sp,
+                color = Color.Yellow,
+                fontWeight = FontWeight.Bold
             )
 
             Spacer(modifier = Modifier.height(8.dp))
