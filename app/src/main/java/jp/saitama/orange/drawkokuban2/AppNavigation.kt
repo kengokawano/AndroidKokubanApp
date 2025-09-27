@@ -78,12 +78,16 @@ fun AppNavigation() {
 
     // 起動時の初期化
     LaunchedEffect(Unit) {
+        // ローディング開始時の状態設定
         // SharedPreferencesから前回開いたスロット番号を取得
         val prefs = context.getSharedPreferences("chalkboard_prefs", android.content.Context.MODE_PRIVATE)
         val lastSlot = prefs.getInt("last_slot", 1)
 
         currentSlot = lastSlot
         editMode = EditMode.EDIT
+
+        // 少し遅延を入れてローディング状態を見せる
+        kotlinx.coroutines.delay(300)
 
         // 前回のファイルが存在するかチェック
         val file = java.io.File(context.filesDir, "chalkboard_$lastSlot.png")
@@ -139,8 +143,12 @@ fun AppNavigation() {
             // 木目テクスチャ背景
             WoodTextureBackground()
 
-            // メイン描画画面
-            ChalkboardScreenWithControls(
+            // ローディング状態に応じた表示切り替え
+            if (viewModel.state.isLoading) {
+                LoadingScreen()
+            } else {
+                // メイン描画画面
+                ChalkboardScreenWithControls(
                 viewModel = viewModel,
                 currentSlot = currentSlot,
                 editMode = editMode,
@@ -198,7 +206,8 @@ fun AppNavigation() {
                         .putBoolean("show_date_overlay", newValue)
                         .apply()
                 }
-            )
+                )
+            }
         }
 
         // 設定ダイアログ
@@ -474,18 +483,26 @@ private fun ChalkboardScreenContent(
                     )
                     val currentBitmap = viewModel.state.bitmap
 
-                    // 新しいサイズが有効で、現在のBitmapがないか、サイズが異なる場合に初期化する
-                    if (newSize.width > 0 && newSize.height > 0 &&
-                        (currentBitmap == null ||
-                                currentBitmap.width != newSize.width.toInt() ||
-                                currentBitmap.height != newSize.height.toInt())) {
-
+                    // 新しいサイズが有効な場合の処理
+                    if (newSize.width > 0 && newSize.height > 0 && !viewModel.state.isLoading) {
                         canvasSize = newSize
-                        viewModel.initializeBitmap(
-                            newSize.width.toInt(),
-                            newSize.height.toInt(),
-                            context
-                        )
+
+                        if (currentBitmap == null) {
+                            // ビットマップがない場合は新規作成
+                            viewModel.initializeBitmap(
+                                newSize.width.toInt(),
+                                newSize.height.toInt(),
+                                context
+                            )
+                        } else if (currentBitmap.width != newSize.width.toInt() ||
+                                   currentBitmap.height != newSize.height.toInt()) {
+                            // ビットマップのサイズが違う場合はリサイズ
+                            viewModel.resizeBitmapToCanvas(
+                                newSize.width.toInt(),
+                                newSize.height.toInt(),
+                                context
+                            )
+                        }
                     }
                 }
                 .pointerInput(viewModel.state.penColor, viewModel.state.isThick, viewModel.state.isEraser) {
@@ -570,6 +587,35 @@ fun WoodTextureBackground() {
         modifier = Modifier.fillMaxSize(),
         contentScale = ContentScale.Crop
     )
+}
+
+@Composable
+fun LoadingScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // 黒板風の背景色でローディング表示
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFF0B2E1A))
+                    .border(2.dp, Color.Gray, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "読み込み中...",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
 }
 
 @Composable

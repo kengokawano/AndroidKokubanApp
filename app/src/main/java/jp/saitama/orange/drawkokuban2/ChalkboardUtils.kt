@@ -78,7 +78,7 @@ fun drawStroke(
     c.drawPath(path, makePenPaint(color, thicknessPx))
 }
 
-// 黒板消し（CLEAR描画で「なぞった所だけ」消す）
+// 黒板消し（背景色で上塗りして消す）
 private fun makeEraserPaint(radiusPx: Float): Paint {
     return Paint().apply {
         isAntiAlias = true
@@ -86,16 +86,8 @@ private fun makeEraserPaint(radiusPx: Float): Paint {
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
         strokeWidth = radiusPx * 2f // 半径→直径
-        try {
-            if (Build.VERSION.SDK_INT >= 29) {
-                blendMode = BlendMode.CLEAR
-            } else {
-                xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
-            }
-        } catch (e: Exception) {
-            // フォールバック: 背景色で上塗り
-            color = Color.rgb(11, 46, 26)
-        }
+        // 背景色で上塗りして消す（透明化ではなく）
+        color = Color.rgb(11, 46, 26) // 黒板の緑色
     }
 }
 

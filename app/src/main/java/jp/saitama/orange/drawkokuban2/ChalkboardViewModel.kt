@@ -34,7 +34,8 @@ data class ChalkboardState(
     val bitmap: Bitmap? = null,
     val currentPath: List<Offset> = emptyList(),
     val isDrawing: Boolean = false,
-    val showClearAllDialog: Boolean = false
+    val showClearAllDialog: Boolean = false,
+    val isLoading: Boolean = true
 )
 
 class ChalkboardViewModel : ViewModel() {
@@ -48,14 +49,14 @@ class ChalkboardViewModel : ViewModel() {
         android.util.Log.d("ChalkboardViewModel", "initializeBitmap called with context: $context")
         val bitmap = createChalkboardBitmap(width, height)
         fillChalkboardBackground(bitmap, context)
-        state = state.copy(bitmap = bitmap)
+        state = state.copy(bitmap = bitmap, isLoading = false)
     }
 
     fun createNewBitmap(context: Context? = null) {
         state.bitmap?.let { currentBitmap ->
             val newBitmap = createChalkboardBitmap(currentBitmap.width, currentBitmap.height)
             fillChalkboardBackground(newBitmap, context)
-            state = state.copy(bitmap = newBitmap)
+            state = state.copy(bitmap = newBitmap, isLoading = false)
         }
     }
 
@@ -180,9 +181,30 @@ class ChalkboardViewModel : ViewModel() {
     fun loadBitmap(context: Context, slotNumber: Int) {
         val file = File(context.filesDir, "chalkboard_$slotNumber.png")
         val bitmap = loadPng(file)
-                if (bitmap != null) {
-            state = state.copy(bitmap = bitmap)
+        if (bitmap != null) {
+            state = state.copy(bitmap = bitmap, isLoading = false)
         }
+    }
+
+    fun resizeBitmapToCanvas(width: Int, height: Int, context: Context) {
+        val currentBitmap = state.bitmap ?: return
+        if (currentBitmap.width == width && currentBitmap.height == height) {
+            // サイズが同じ場合もローディング終了
+            state = state.copy(isLoading = false)
+            return
+        }
+
+        // 新しいサイズのビットマップを作成
+        val newBitmap = createChalkboardBitmap(width, height)
+        fillChalkboardBackground(newBitmap, context)
+
+        // 既存のビットマップを中央に配置してコピー
+        val canvas = android.graphics.Canvas(newBitmap)
+        val left = (width - currentBitmap.width) / 2f
+        val top = (height - currentBitmap.height) / 2f
+        canvas.drawBitmap(currentBitmap, left, top, null)
+
+        state = state.copy(bitmap = newBitmap, isLoading = false)
     }
 
     fun createThumbnail(maxW: Int = 200, maxH: Int = 150): Bitmap? {
