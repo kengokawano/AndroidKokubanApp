@@ -27,6 +27,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 // 選択状態の色定数
@@ -130,6 +131,14 @@ fun ToolSelector(
     onEraserSelected: () -> Unit,
     onClearAllRequested: () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+
+    // レスポンシブなサイズ設定
+    val buttonSize = (screenWidth / 7).coerceAtLeast(48.dp).coerceAtMost(72.dp)
+    val iconSize = (buttonSize * 0.85f).coerceAtLeast(36.dp).coerceAtMost(60.dp)
+    val fontSizeValue = (screenWidth.value / 20).coerceAtLeast(16f).coerceAtMost(26f)
+    val fontSize = fontSizeValue.sp
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -149,7 +158,7 @@ fun ToolSelector(
             IconButton(
                 onClick = { onColorSelected(PenColor.WHITE) },
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(buttonSize)
                     .background(Color.Transparent, RoundedCornerShape(8.dp))
                     .then(
                         if (!isEraser && penColor == PenColor.WHITE)
@@ -160,7 +169,7 @@ fun ToolSelector(
                 Icon(
                     painter = painterResource(R.drawable.pen_white_128),
                     contentDescription = stringResource(R.string.tool_white),
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(iconSize),
                     tint = Color.Unspecified
                 )
             }
@@ -169,7 +178,7 @@ fun ToolSelector(
             IconButton(
                 onClick = { onColorSelected(PenColor.RED) },
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(buttonSize)
                     .background(Color.Transparent, RoundedCornerShape(8.dp))
                     .then(
                         if (!isEraser && penColor == PenColor.RED)
@@ -180,7 +189,7 @@ fun ToolSelector(
                 Icon(
                     painter = painterResource(R.drawable.pen_pink_128),
                     contentDescription = stringResource(R.string.tool_red),
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(iconSize),
                     tint = Color.Unspecified
                 )
             }
@@ -194,12 +203,12 @@ fun ToolSelector(
                 ),
                 modifier = Modifier
                     .padding(horizontal = 4.dp)
-                    .height(48.dp)
-                    .width(64.dp)
+                    .height(buttonSize)
+                    .width((buttonSize.value * 1.2f).dp)
             ) {
                 Text(
                     text = if (isThick) stringResource(R.string.tool_thick) else stringResource(R.string.tool_thin),
-                    fontSize = 22.sp,
+                    fontSize = fontSize,
                     fontWeight = if (isThick) FontWeight.Bold else FontWeight.Normal
                 )
             }
@@ -208,7 +217,7 @@ fun ToolSelector(
             IconButton(
                 onClick = onEraserSelected,
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(buttonSize)
                     .background(Color.Transparent, RoundedCornerShape(8.dp))
                     .then(
                         if (isEraser)
@@ -219,7 +228,7 @@ fun ToolSelector(
                 Icon(
                     painter = painterResource(R.drawable.eraser_128),
                     contentDescription = stringResource(R.string.tool_eraser),
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(iconSize),
                     tint = Color.Unspecified
                 )
             }
@@ -228,7 +237,7 @@ fun ToolSelector(
             IconButton(
                 onClick = onClearAllRequested,
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(buttonSize)
                     .background(
                         Color.Transparent,
                         RoundedCornerShape(8.dp)
@@ -237,7 +246,7 @@ fun ToolSelector(
                 Icon(
                     painter = painterResource(R.drawable.bucket_128),
                     contentDescription = stringResource(R.string.tool_clear_all),
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(iconSize),
                     tint = Color.Unspecified
                 )
             }
