@@ -447,7 +447,7 @@ private fun ChalkboardScreenContent(
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val toolBarHeight = (screenHeight * 0.12f).coerceAtLeast(80.dp).coerceAtMost(120.dp)
-    val bottomSpacing = (screenHeight * 0.04f).coerceAtLeast(20.dp).coerceAtMost(40.dp)
+    val bottomSpacing = (screenHeight * 0.04f).coerceAtLeast(5.dp).coerceAtMost(10.dp)
 
     Column(
         modifier = Modifier.fillMaxSize()
