@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
@@ -442,6 +443,12 @@ private fun ChalkboardScreenContent(
     val context = LocalContext.current
     var canvasSize by remember { mutableStateOf(Size.Zero) }
 
+    // 画面サイズに基づいてレイアウトを調整
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    val toolBarHeight = (screenHeight * 0.12f).coerceAtLeast(80.dp).coerceAtMost(120.dp)
+    val bottomSpacing = (screenHeight * 0.04f).coerceAtLeast(20.dp).coerceAtMost(40.dp)
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -626,17 +633,23 @@ private fun ChalkboardScreenContent(
             }
         }
 
+        // ツール選択（キャンバスの下）
+        Box(
+            modifier = Modifier.height(toolBarHeight)
+        ) {
+            ToolSelector(
+                penColor = viewModel.state.penColor,
+                isThick = viewModel.state.isThick,
+                isEraser = viewModel.state.isEraser,
+                onColorSelected = { viewModel.selectPenColor(it) },
+                onThicknessToggled = { viewModel.toggleThickness() },
+                onEraserSelected = { viewModel.selectEraser() },
+                onClearAllRequested = { viewModel.showClearAllDialog() }
+            )
+        }
 
-        // ツール選択（画面下部）
-        ToolSelector(
-            penColor = viewModel.state.penColor,
-            isThick = viewModel.state.isThick,
-            isEraser = viewModel.state.isEraser,
-            onColorSelected = { viewModel.selectPenColor(it) },
-            onThicknessToggled = { viewModel.toggleThickness() },
-            onEraserSelected = { viewModel.selectEraser() },
-            onClearAllRequested = { viewModel.showClearAllDialog() }
-        )
+        // 下部余白（スマホの下を触らないように）
+        Spacer(modifier = Modifier.height(bottomSpacing))
 
         // 全消し確認ダイアログ
         if (viewModel.state.showClearAllDialog) {
@@ -1017,7 +1030,6 @@ fun AboutDialog(
                     stringResource(R.string.app_description),
                     fontSize = 16.sp
                 )
-
 
 
                 Spacer(modifier = Modifier.height(16.dp))
