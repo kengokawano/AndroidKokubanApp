@@ -14,6 +14,9 @@ object AppColors {
     val BOARD_BACKGROUND = Color(0xFF0F3D20)
     val MAIN_BACKGROUND = Color(0xFF0B2E1A)
 
+    // 黒板色
+    val CHALKBOARD = Color(11, 46, 26)
+
     // 勝利時のハイライト色
     val WINNING_WHITE = Color(0xFFFFFFAA) // 黄色がかった白
     val WINNING_RED = RED.copy(alpha = 0.8f) // 少し透明にした赤

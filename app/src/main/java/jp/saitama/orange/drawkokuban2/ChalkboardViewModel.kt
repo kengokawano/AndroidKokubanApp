@@ -27,6 +27,7 @@ enum class PenColor {
 }
 
 
+
 data class ChalkboardState(
     val penColor: PenColor = PenColor.WHITE,
     val isThick: Boolean = false,
@@ -144,7 +145,7 @@ class ChalkboardViewModel : ViewModel() {
 
         if (state.isEraser) {
             val thickness = getEraserRadius(context)
-            drawCircle(bitmap, point, thickness, Color.BLACK)
+            drawCircle(bitmap, point, thickness, AppColors.CHALKBOARD.toArgb())
         } else {
             val color = when (state.penColor) {
                 PenColor.WHITE -> Color.WHITE
@@ -308,10 +309,8 @@ class ChalkboardViewModel : ViewModel() {
         val pixels = IntArray(originalBitmap.width * originalBitmap.height)
         originalBitmap.getPixels(pixels, 0, originalBitmap.width, 0, 0, originalBitmap.width, originalBitmap.height)
 
-        val chalkboardColor = Color.rgb(11, 46, 26) // 黒板の緑色
-
         for (i in pixels.indices) {
-            if (pixels[i] == chalkboardColor) {
+            if (pixels[i] == AppColors.CHALKBOARD.toArgb()) {
                 pixels[i] = Color.TRANSPARENT
             }
         }
