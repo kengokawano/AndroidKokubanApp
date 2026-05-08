@@ -48,6 +48,8 @@
     <string name="settings_pen_thin_size">Thin Pen Size: %1$d</string>
     <string name="settings_pen_thick_size">Thick Pen Size: %1$d</string>
     <string name="settings_eraser_size">Eraser Circle Size: %1$d</string>
+    <string name="settings_pen_velocity_variable">Velocity-variable Thickness (Chalk)</string>
+    <string name="settings_pen_velocity_variable_desc">Faster strokes draw thinner; slower strokes draw thicker</string>
     <string name="settings_section_display">Display Settings</string>
     <string name="settings_display_date">Chalkboard Date Display</string>
     <string name="settings_section_notification">Notification Settings</string>

@@ -46,6 +46,8 @@ class ChalkboardViewModel : ViewModel() {
         private set
 
     private var lastDrawnPoint: Offset? = null
+    // 速度可変ストローク用：イベント間で太さの連続性を保つキャリーオーバー
+    private var lastVelocityMult: Float = 1f
 
     fun initializeBitmap(width: Int, height: Int, context: Context? = null) {
         android.util.Log.d("ChalkboardViewModel", "initializeBitmap called with context: $context")
@@ -85,6 +87,7 @@ class ChalkboardViewModel : ViewModel() {
     fun startDrawing(point: Offset, context: Context) {
         val bitmap = state.bitmap ?: return
         lastDrawnPoint = point
+        lastVelocityMult = 1f
 
         // Down時点で1点描画。タップだけでも点が残り、小さい文字の始点もズレない
         if (state.isEraser) {
@@ -129,7 +132,15 @@ class ChalkboardViewModel : ViewModel() {
                 PenColor.WHITE -> Color.WHITE
                 PenColor.RED -> AppColors.RED.toArgb()
             }
-            drawStroke(bitmap, segment, color, getPenThickness(context))
+            val thickness = getPenThickness(context)
+            // 設定で速度可変ストローク（チョーク風）の有効/無効を切り替え
+            if (isVelocityVariableStrokeEnabled(context)) {
+                lastVelocityMult = drawStrokeVariable(
+                    bitmap, segment, color, thickness, lastVelocityMult
+                )
+            } else {
+                drawStroke(bitmap, segment, color, thickness)
+            }
         }
 
         lastDrawnPoint = prev
@@ -139,6 +150,7 @@ class ChalkboardViewModel : ViewModel() {
     fun endDrawing() {
         state = state.copy(isDrawing = false)
         lastDrawnPoint = null
+        lastVelocityMult = 1f
     }
 
     fun clearAll(context: Context? = null) {
@@ -228,6 +240,11 @@ class ChalkboardViewModel : ViewModel() {
     private fun getEraserRadius(context: Context): Float {
         val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
         return prefs.getFloat("eraser_radius", 48f)
+    }
+
+    private fun isVelocityVariableStrokeEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+        return prefs.getBoolean("pen_velocity_variable", false)
     }
 
     fun exportToPng(context: Context): Boolean {

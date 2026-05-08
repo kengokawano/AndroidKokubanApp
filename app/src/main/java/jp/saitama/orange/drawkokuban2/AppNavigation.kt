@@ -90,6 +90,9 @@ fun AppNavigation() {
             )
         )
     }
+    var velocityVariableStroke by remember {
+        mutableStateOf(prefs.getBoolean("pen_velocity_variable", false))
+    }
     var quickAccessNotification by remember {
         val appPrefs =
             context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
@@ -277,6 +280,11 @@ fun AppNavigation() {
                     exportWithBackground = newValue
                     prefs.edit().putBoolean("export_with_background", newValue).apply()
                 },
+                velocityVariableStroke = velocityVariableStroke,
+                onVelocityVariableStrokeChanged = { newValue ->
+                    velocityVariableStroke = newValue
+                    prefs.edit().putBoolean("pen_velocity_variable", newValue).apply()
+                },
                 quickAccessNotification = quickAccessNotification,
                 onQuickAccessNotificationChanged = { newValue ->
                     quickAccessNotification = newValue
@@ -343,6 +351,9 @@ fun ChalkboardScreenWithControls(
             )
         )
     }
+    var velocityVariableStroke by remember {
+        mutableStateOf(prefs.getBoolean("pen_velocity_variable", false))
+    }
     var quickAccessNotification by remember {
         val appPrefs =
             context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
@@ -394,6 +405,11 @@ fun ChalkboardScreenWithControls(
             onExportWithBackgroundChanged = { newValue ->
                 exportWithBackground = newValue
                 prefs.edit().putBoolean("export_with_background", newValue).apply()
+            },
+            velocityVariableStroke = velocityVariableStroke,
+            onVelocityVariableStrokeChanged = { newValue ->
+                velocityVariableStroke = newValue
+                prefs.edit().putBoolean("pen_velocity_variable", newValue).apply()
             },
             quickAccessNotification = quickAccessNotification,
             onQuickAccessNotificationChanged = { newValue ->
@@ -822,6 +838,8 @@ fun SettingsDialog(
     onThickPenSizeChanged: (Float) -> Unit,
     eraserRadius: Float,
     onEraserRadiusChanged: (Float) -> Unit,
+    velocityVariableStroke: Boolean,
+    onVelocityVariableStrokeChanged: (Boolean) -> Unit,
     exportWithBackground: Boolean,
     onExportWithBackgroundChanged: (Boolean) -> Unit,
     quickAccessNotification: Boolean,
@@ -896,6 +914,28 @@ fun SettingsDialog(
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
+
+                // 速度可変ストローク（チョーク風）切り替え
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(stringResource(R.string.settings_pen_velocity_variable))
+                        Text(
+                            stringResource(R.string.settings_pen_velocity_variable_desc),
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    Switch(
+                        checked = velocityVariableStroke,
+                        onCheckedChange = onVelocityVariableStrokeChanged
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 

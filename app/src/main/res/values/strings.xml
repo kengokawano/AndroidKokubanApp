@@ -48,6 +48,8 @@
     <string name="settings_pen_thin_size">細いペン サイズ: %1$d</string>
     <string name="settings_pen_thick_size">太いペン サイズ: %1$d</string>
     <string name="settings_eraser_size">黒板消しの円の広さ: %1$d</string>
+    <string name="settings_pen_velocity_variable">速度で太さ変化（チョーク風）</string>
+    <string name="settings_pen_velocity_variable_desc">速く動かすと細く、ゆっくりだと太く描画します</string>
     <string name="settings_section_display">表示設定</string>
     <string name="settings_display_date">黒板の日付表示</string>
     <string name="settings_section_notification">通知設定</string>
