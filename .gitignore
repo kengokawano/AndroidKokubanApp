@@ -13,3 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Build outputs (Play Store配布用バイナリは履歴に残さない)
+/app/build/
+/app/release/
+*.apk
+*.aab
