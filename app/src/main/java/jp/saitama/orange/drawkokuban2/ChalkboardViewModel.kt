@@ -33,7 +33,8 @@ data class ChalkboardState(
     val isThick: Boolean = false,
     val isEraser: Boolean = false,
     val bitmap: Bitmap? = null,
-    val currentPath: List<Offset> = emptyList(),
+    // Image再描画を促すための変更通知用カウンタ。bitmapは破壊的に書き換えるためインスタンスは変わらない
+    val drawVersion: Int = 0,
     val isDrawing: Boolean = false,
     val showClearAllDialog: Boolean = false,
     val isLoading: Boolean = true
@@ -44,7 +45,7 @@ class ChalkboardViewModel : ViewModel() {
     var state by mutableStateOf(ChalkboardState())
         private set
 
-    private var currentPath = mutableListOf<Offset>()
+    private var lastDrawnPoint: Offset? = null
 
     fun initializeBitmap(width: Int, height: Int, context: Context? = null) {
         android.util.Log.d("ChalkboardViewModel", "initializeBitmap called with context: $context")
@@ -81,86 +82,63 @@ class ChalkboardViewModel : ViewModel() {
         state = state.copy(showClearAllDialog = false)
     }
 
-    fun startDrawing(point: Offset) {
-        currentPath.clear()
-        currentPath.add(point)
-        state = state.copy(
-            isDrawing = true,
-            currentPath = currentPath.toList()
-        )
-    }
-
-    fun continueDrawing(point: Offset, context: Context) {
-        if (!state.isDrawing) return
-
+    fun startDrawing(point: Offset, context: Context) {
         val bitmap = state.bitmap ?: return
+        lastDrawnPoint = point
 
-        // 点の間引き
-        val minStep = if (state.isEraser) {
-            24f * 0.6f
-        } else {
-            if (state.isThick) 12f * 0.6f else 6f * 0.6f
-        }
-
-        if (currentPath.isNotEmpty()) {
-            val lastPoint = currentPath.last()
-            val dx = point.x - lastPoint.x
-            val dy = point.y - lastPoint.y
-            if (dx * dx + dy * dy < minStep * minStep) {
-                return
-            }
-        }
-
-        currentPath.add(point)
-
-        // リアルタイム描画
-        if (currentPath.size >= 2) {
-            if (state.isEraser) {
-                val eraserSize = getEraserRadius(context)
-                erasePath(bitmap, currentPath.takeLast(2), eraserSize)
-            } else {
-                val color = when (state.penColor) {
-                    PenColor.WHITE -> Color.WHITE
-                    PenColor.RED -> AppColors.RED.toArgb()
-                }
-                val thickness = getPenThickness(context)
-                drawStroke(bitmap, currentPath.takeLast(2), color, thickness)
-            }
-
-        }
-
-        state = state.copy(currentPath = currentPath.toList())
-    }
-
-    fun endDrawing() {
-        state = state.copy(
-            isDrawing = false,
-            currentPath = emptyList()
-        )
-        currentPath.clear()
-    }
-
-    fun drawPoint(point: Offset, context: Context) {
-        val bitmap = state.bitmap ?: return
-
+        // Down時点で1点描画。タップだけでも点が残り、小さい文字の始点もズレない
         if (state.isEraser) {
-            val thickness = getEraserRadius(context)
-            drawCircle(bitmap, point, thickness, AppColors.CHALKBOARD.toArgb())
+            drawCircle(bitmap, point, getEraserRadius(context), AppColors.CHALKBOARD.toArgb())
         } else {
             val color = when (state.penColor) {
                 PenColor.WHITE -> Color.WHITE
                 PenColor.RED -> AppColors.RED.toArgb()
             }
-            val thickness = getPenThickness(context) / 2f
-            drawCircle(bitmap, point, thickness, color)
+            drawCircle(bitmap, point, getPenThickness(context) / 2f, color)
         }
 
-        // 新しいbitmapインスタンスを作成してComposeに変更を通知
-        val newBitmap = bitmap.copy(bitmap.config ?: Bitmap.Config.ARGB_8888, true)
-        val canvas = Canvas(newBitmap)
-        canvas.drawBitmap(bitmap, 0f, 0f, null)
+        state = state.copy(
+            isDrawing = true,
+            drawVersion = state.drawVersion + 1
+        )
+    }
 
-        state = state.copy(bitmap = newBitmap)
+    fun continueDrawing(points: List<Offset>, context: Context) {
+        if (!state.isDrawing) return
+        if (points.isEmpty()) return
+        val bitmap = state.bitmap ?: return
+
+        val starting = lastDrawnPoint ?: points.first()
+        val segment = ArrayList<Offset>(points.size + 1)
+        segment.add(starting)
+        var prev = starting
+        for (p in points) {
+            // サブピクセル重複は除外（描画負荷軽減）
+            val dx = p.x - prev.x
+            val dy = p.y - prev.y
+            if (dx * dx + dy * dy < 1f) continue
+            segment.add(p)
+            prev = p
+        }
+        if (segment.size < 2) return
+
+        if (state.isEraser) {
+            erasePath(bitmap, segment, getEraserRadius(context))
+        } else {
+            val color = when (state.penColor) {
+                PenColor.WHITE -> Color.WHITE
+                PenColor.RED -> AppColors.RED.toArgb()
+            }
+            drawStroke(bitmap, segment, color, getPenThickness(context))
+        }
+
+        lastDrawnPoint = prev
+        state = state.copy(drawVersion = state.drawVersion + 1)
+    }
+
+    fun endDrawing() {
+        state = state.copy(isDrawing = false)
+        lastDrawnPoint = null
     }
 
     fun clearAll(context: Context? = null) {

@@ -4,8 +4,8 @@ import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
@@ -586,28 +586,35 @@ private fun ChalkboardScreenContent(
                     viewModel.state.isThick,
                     viewModel.state.isEraser
                 ) {
-                    detectTapGestures(
-                        onTap = { offset ->
-                            viewModel.drawPoint(offset, context)
+                    awaitPointerEventScope {
+                        while (true) {
+                            // Downでタッチスロップを介さず即描画開始
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            viewModel.startDrawing(down.position, context)
+                            down.consume()
+
+                            var active = true
+                            while (active) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id }
+                                if (change == null) {
+                                    viewModel.endDrawing()
+                                    active = false
+                                } else if (change.pressed) {
+                                    // フレーム間サンプル(historical)も拾って線をなめらかに
+                                    val pts = ArrayList<Offset>(change.historical.size + 1)
+                                    change.historical.forEach { pts.add(it.position) }
+                                    pts.add(change.position)
+                                    viewModel.continueDrawing(pts, context)
+                                    change.consume()
+                                } else {
+                                    viewModel.endDrawing()
+                                    change.consume()
+                                    active = false
+                                }
+                            }
                         }
-                    )
-                }
-                .pointerInput(
-                    viewModel.state.penColor,
-                    viewModel.state.isThick,
-                    viewModel.state.isEraser
-                ) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            viewModel.startDrawing(offset)
-                        },
-                        onDrag = { change, _ ->
-                            viewModel.continueDrawing(change.position, context)
-                        },
-                        onDragEnd = {
-                            viewModel.endDrawing()
-                        }
-                    )
+                    }
                 }
         ) {
             // ビットマップ表示

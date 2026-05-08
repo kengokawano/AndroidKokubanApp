@@ -5,8 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -74,17 +74,33 @@ fun ChalkboardScreen(
                 .background(Color(0xFF0B2E1A))
                 .border(2.dp, Color.Gray, RoundedCornerShape(8.dp))
                 .pointerInput(viewModel.state.penColor, viewModel.state.isThick, viewModel.state.isEraser) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            viewModel.startDrawing(offset)
-                        },
-                        onDrag = { change, _ ->
-                            viewModel.continueDrawing(change.position, context)
-                        },
-                        onDragEnd = {
-                            viewModel.endDrawing()
+                    awaitPointerEventScope {
+                        while (true) {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            viewModel.startDrawing(down.position, context)
+                            down.consume()
+
+                            var active = true
+                            while (active) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id }
+                                if (change == null) {
+                                    viewModel.endDrawing()
+                                    active = false
+                                } else if (change.pressed) {
+                                    val pts = ArrayList<Offset>(change.historical.size + 1)
+                                    change.historical.forEach { pts.add(it.position) }
+                                    pts.add(change.position)
+                                    viewModel.continueDrawing(pts, context)
+                                    change.consume()
+                                } else {
+                                    viewModel.endDrawing()
+                                    change.consume()
+                                    active = false
+                                }
+                            }
                         }
-                    )
+                    }
                 }
         ) {
             // ビットマップ表示
