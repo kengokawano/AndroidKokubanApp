@@ -13,6 +13,7 @@
     <string name="action_save">Save</string>
     <string name="action_file_list">Communication book</string>
     <string name="action_back">Back</string>
+    <string name="action_send_to_ai">Send to AI</string>
 
     <!-- Dialogs -->
     <string name="dialog_clear_all_message">Clear all content?</string>
@@ -32,6 +33,11 @@
     <!-- Export Messages -->
     <string name="export_success">This communication saved as image</string>
     <string name="export_failed">Save failed</string>
+    <string name="ai_clip_label">Chalkboard answer image</string>
+    <string name="ai_paste_prompt">Image copied. Paste it into the %1$s conversation</string>
+    <string name="ai_copy_failed">Could not copy the image</string>
+    <string name="ai_not_installed">Image copied. Open %1$s manually and paste it</string>
+    <string name="ai_open_failed">Image copied. Open %1$s manually and paste it</string>
 
     <!-- Content Descriptions -->
     <string name="content_desc_chalkboard">Chalkboard</string>
@@ -53,6 +59,7 @@
     <string name="settings_section_display">Display Settings</string>
     <string name="settings_display_date">Chalkboard Date Display</string>
     <string name="settings_section_notification">Notification Settings</string>
+    <string name="settings_section_ai_target">Send-to AI</string>
     <string name="settings_notification_quick_access">Quick Access Notification</string>
     <string name="settings_notification_quick_access_desc">Stay in notification bar for quick app access (battery efficient)</string>
     <string name="settings_section_file">File Settings</string>
@@ -76,6 +83,17 @@
     <string name="about_feature_naming">✓ Date-time based naming</string>
     <string name="about_feature_i18n">✓ Multi-language support (Japanese/English)</string>
     <string name="about_feature_wood_bg">✓ Wood texture background</string>
+    <string name="about_feature_memo">✓ Pinned memos from the clipboard</string>
+    <string name="about_section_usage">How to Use</string>
+    <string name="about_usage_draw">- Draw with your finger (white or red chalk)</string>
+    <string name="about_usage_tools">- Switch color, thickness and eraser with the bottom buttons</string>
+    <string name="about_usage_clear">- Clear all wipes the whole board</string>
+    <string name="about_usage_memo_paste">- Long-press the board to paste copied text as a memo</string>
+    <string name="about_usage_memo_move">- Drag a memo to move it (clear all removes it)</string>
+    <string name="about_usage_save">- Save to one of 30 slots, reopen from the list button</string>
+    <string name="about_usage_export">- Export saves a PNG to your photo folder</string>
+    <string name="about_usage_ai">- Send copies the image and opens your AI app</string>
+    <string name="about_usage_settings">- Settings changes pen sizes and the date overlay</string>
     <string name="about_section_developer">Developer Information</string>
     <string name="about_dev_name">Developer: Orange Saitama</string>
     <string name="about_dev_tech">Technology: Kotlin, Jetpack Compose</string>
@@ -116,4 +134,7 @@
     <string name="difficulty_normal">NORMAL</string>
     <string name="difficulty_hard">HARD</string>
     <string name="difficulty_expert">EXPERT</string>
+    <!-- Pinned memo -->
+    <string name="memo_clipboard_empty">Nothing to paste</string>
+    <string name="content_desc_pinned_memo">Pinned memo</string>
 </resources>

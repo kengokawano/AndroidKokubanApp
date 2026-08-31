@@ -1,9 +1,15 @@
 package jp.saitama.orange.drawkokuban2
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
@@ -15,6 +21,7 @@ import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -51,6 +58,22 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.unit.IntOffset
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.math.roundToInt
+
+enum class AiTarget(val key: String, val displayName: String, val packageName: String) {
+    CHATGPT("chatgpt", "ChatGPT", "com.openai.chatgpt"),
+    CLAUDE("claude", "Claude", "com.anthropic.claude"),
+    GEMINI("gemini", "Gemini", "com.google.android.apps.bard");
+
+    companion object {
+        fun fromKey(key: String?): AiTarget =
+            entries.firstOrNull { it.key == key } ?: CHATGPT
+    }
+}
 
 enum class EditMode {
     EDIT      // 編集モード（指定スロットに保存）
@@ -92,6 +115,9 @@ fun AppNavigation() {
     }
     var velocityVariableStroke by remember {
         mutableStateOf(prefs.getBoolean("pen_velocity_variable", false))
+    }
+    var aiSendTarget by remember {
+        mutableStateOf(AiTarget.fromKey(prefs.getString("ai_send_target", null)))
     }
     var quickAccessNotification by remember {
         val appPrefs =
@@ -229,6 +255,61 @@ fun AppNavigation() {
                             )
                         }
                     },
+                    onSendToAi = {
+                        val target = AiTarget.fromKey(prefs.getString("ai_send_target", null))
+                        val imageUri = viewModel.createClipboardPngUri(context)
+                        if (imageUri == null) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = context.getString(R.string.ai_copy_failed),
+                                    duration = SnackbarDuration.Short
+                                )
+                            }
+                        } else {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
+                                as ClipboardManager
+                            clipboard.setPrimaryClip(
+                                ClipData.newUri(
+                                    context.contentResolver,
+                                    context.getString(R.string.ai_clip_label),
+                                    imageUri
+                                )
+                            )
+
+                            val launchIntent = context.packageManager
+                                .getLaunchIntentForPackage(target.packageName)
+                            if (launchIntent == null) {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        message = context.getString(
+                                            R.string.ai_not_installed,
+                                            target.displayName
+                                        ),
+                                        duration = SnackbarDuration.Long
+                                    )
+                                }
+                            } else {
+                                try {
+                                    context.grantUriPermission(
+                                        target.packageName,
+                                        imageUri,
+                                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    )
+                                    context.startActivity(launchIntent)
+                                } catch (e: Exception) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = context.getString(
+                                                R.string.ai_open_failed,
+                                                target.displayName
+                                            ),
+                                            duration = SnackbarDuration.Long
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    },
                     showDateOverlay = showDateOverlay,
                     onDateOverlayChanged = { newValue ->
                         showDateOverlay = newValue
@@ -285,6 +366,11 @@ fun AppNavigation() {
                     velocityVariableStroke = newValue
                     prefs.edit().putBoolean("pen_velocity_variable", newValue).apply()
                 },
+                aiSendTarget = aiSendTarget,
+                onAiSendTargetChanged = { newTarget ->
+                    aiSendTarget = newTarget
+                    prefs.edit().putString("ai_send_target", newTarget.key).apply()
+                },
                 quickAccessNotification = quickAccessNotification,
                 onQuickAccessNotificationChanged = { newValue ->
                     quickAccessNotification = newValue
@@ -331,6 +417,7 @@ fun ChalkboardScreenWithControls(
     onShowSettings: () -> Unit,
     onShowAbout: () -> Unit,
     onExport: () -> Unit,
+    onSendToAi: () -> Unit,
     showDateOverlay: Boolean,
     onDateOverlayChanged: (Boolean) -> Unit
 ) {
@@ -354,6 +441,9 @@ fun ChalkboardScreenWithControls(
     var velocityVariableStroke by remember {
         mutableStateOf(prefs.getBoolean("pen_velocity_variable", false))
     }
+    var aiSendTarget by remember {
+        mutableStateOf(AiTarget.fromKey(prefs.getString("ai_send_target", null)))
+    }
     var quickAccessNotification by remember {
         val appPrefs =
             context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
@@ -371,6 +461,7 @@ fun ChalkboardScreenWithControls(
             onShowSettings = { showSettings = true },
             onShowAbout = { showAbout = true },
             onExport = onExport,
+            onSendToAi = onSendToAi,
             showDateOverlay = showDateOverlay
         )
 
@@ -410,6 +501,11 @@ fun ChalkboardScreenWithControls(
             onVelocityVariableStrokeChanged = { newValue ->
                 velocityVariableStroke = newValue
                 prefs.edit().putBoolean("pen_velocity_variable", newValue).apply()
+            },
+            aiSendTarget = aiSendTarget,
+            onAiSendTargetChanged = { newTarget ->
+                aiSendTarget = newTarget
+                prefs.edit().putString("ai_send_target", newTarget.key).apply()
             },
             quickAccessNotification = quickAccessNotification,
             onQuickAccessNotificationChanged = { newValue ->
@@ -454,6 +550,7 @@ private fun ChalkboardScreenContent(
     onShowSettings: () -> Unit,
     onShowAbout: () -> Unit,
     onExport: () -> Unit,
+    onSendToAi: () -> Unit,
     showDateOverlay: Boolean
 ) {
     val context = LocalContext.current
@@ -551,8 +648,14 @@ private fun ChalkboardScreenContent(
                             tint = Color.White
                         )
                     }
-                    // 大きめのスペーサー（保存との間）
-                    Spacer(modifier = Modifier.width(16.dp))
+                    // AIへ送るボタン（PNGをコピーして選択中のAIアプリを開く）
+                    IconButton(onClick = onSendToAi) {
+                        Icon(
+                            Icons.Default.Send,
+                            contentDescription = stringResource(R.string.action_send_to_ai),
+                            tint = Color.White
+                        )
+                    }
                     // 保存ボタン
                     IconButton(onClick = onSave) {
                         Icon(
@@ -569,7 +672,7 @@ private fun ChalkboardScreenContent(
         Box(
             modifier = Modifier
                 .weight(1f)
-                .padding(16.dp)
+                .padding(8.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color(0xFF0B2E1A)) // キャンバス部分は黒板色（緑）
                 .border(2.dp, Color.Gray, RoundedCornerShape(8.dp))
@@ -602,12 +705,102 @@ private fun ChalkboardScreenContent(
                     viewModel.state.isThick,
                     viewModel.state.isEraser
                 ) {
+                    val longPressTimeout = viewConfiguration.longPressTimeoutMillis
+                    val slop = viewConfiguration.touchSlop
                     awaitPointerEventScope {
                         while (true) {
-                            // Downでタッチスロップを介さず即描画開始
                             val down = awaitFirstDown(requireUnconsumed = false)
-                            viewModel.startDrawing(down.position, context)
                             down.consume()
+
+                            // ピン留めメモの上ならメモを移動（描画はしない）
+                            val memoId = viewModel.hitTestMemo(down.position)
+                            if (memoId != null) {
+                                var previous = down.position
+                                var dragging = true
+                                while (dragging) {
+                                    val event = awaitPointerEvent()
+                                    val change = event.changes.firstOrNull { it.id == down.id }
+                                    if (change == null) {
+                                        dragging = false
+                                    } else {
+                                        if (change.pressed) {
+                                            viewModel.moveMemo(
+                                                memoId,
+                                                change.position.x - previous.x,
+                                                change.position.y - previous.y
+                                            )
+                                            previous = change.position
+                                        } else {
+                                            dragging = false
+                                        }
+                                        change.consume()
+                                    }
+                                }
+                                continue
+                            }
+
+                            // 長押し＝クリップボードの内容をメモとして貼り付け。
+                            // 指が動いた／離れた時点で通常の描画に切り替えるので描き心地は変わらない
+                            var moved: PointerInputChange? = null
+                            var released = false
+                            val interrupted = withTimeoutOrNull(longPressTimeout) {
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    val change = event.changes.firstOrNull { it.id == down.id }
+                                    if (change == null) {
+                                        released = true
+                                        break
+                                    }
+                                    if (!change.pressed) {
+                                        change.consume()
+                                        released = true
+                                        break
+                                    }
+                                    if ((change.position - down.position).getDistance() > slop) {
+                                        moved = change
+                                        break
+                                    }
+                                    change.consume()
+                                }
+                            }
+
+                            if (interrupted == null) {
+                                // 長押し成立：クリップボードを貼り付ける
+                                if (viewModel.pasteMemoFromClipboard(context, down.position)) {
+                                    var holding = true
+                                    while (holding) {
+                                        val event = awaitPointerEvent()
+                                        val change = event.changes.firstOrNull { it.id == down.id }
+                                        if (change == null || !change.pressed) {
+                                            change?.consume()
+                                            holding = false
+                                        } else {
+                                            change.consume()
+                                        }
+                                    }
+                                    continue
+                                }
+                                // 貼り付けるものが無ければ通常の描画として続行
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.memo_clipboard_empty),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                            // 押した位置から描画開始（点だけのタップもそのまま残る）
+                            viewModel.startDrawing(down.position, context)
+                            if (released) {
+                                viewModel.endDrawing()
+                                continue
+                            }
+                            moved?.let { change ->
+                                val pts = ArrayList<Offset>(change.historical.size + 1)
+                                change.historical.forEach { pts.add(it.position) }
+                                pts.add(change.position)
+                                viewModel.continueDrawing(pts, context)
+                                change.consume()
+                            }
 
                             var active = true
                             while (active) {
@@ -644,6 +837,17 @@ private fun ChalkboardScreenContent(
             } ?: run {
                 // Bitmapがない場合は空のスペースを表示
                 Spacer(modifier = Modifier.fillMaxSize())
+            }
+
+            // ピン留めメモ（黒板の絵とは別レイヤー。ドラッグで移動できる）
+            viewModel.state.memos.forEach { memo ->
+                Image(
+                    bitmap = memo.bitmap.asImageBitmap(),
+                    contentDescription = stringResource(R.string.content_desc_pinned_memo),
+                    modifier = Modifier.offset {
+                        IntOffset(memo.x.roundToInt(), memo.y.roundToInt())
+                    }
+                )
             }
 
             // 日付表示（右上オーバーレイ）
@@ -842,6 +1046,8 @@ fun SettingsDialog(
     onVelocityVariableStrokeChanged: (Boolean) -> Unit,
     exportWithBackground: Boolean,
     onExportWithBackgroundChanged: (Boolean) -> Unit,
+    aiSendTarget: AiTarget,
+    onAiSendTargetChanged: (AiTarget) -> Unit,
     quickAccessNotification: Boolean,
     onQuickAccessNotificationChanged: (Boolean) -> Unit,
     onDismiss: () -> Unit
@@ -869,7 +1075,9 @@ fun SettingsDialog(
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
             ) {
                 // ペン設定セクション
                 Text(
@@ -984,6 +1192,31 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // AI送信先セクション
+                Text(
+                    stringResource(R.string.settings_section_ai_target),
+                    fontSize = 16.sp,
+                    color = Color(255, 240, 130)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                AiTarget.entries.forEach { target ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onAiSendTargetChanged(target) },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = aiSendTarget == target,
+                            onClick = { onAiSendTargetChanged(target) }
+                        )
+                        Text(target.displayName)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 // 通知設定セクション
                 Text(
                     stringResource(R.string.settings_section_notification),
@@ -1070,7 +1303,9 @@ fun AboutDialog(
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
             ) {
                 // アプリ基本情報
                 Text(
@@ -1092,6 +1327,24 @@ fun AboutDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // 使い方
+                Text(
+                    stringResource(R.string.about_section_usage),
+                    fontSize = 16.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(stringResource(R.string.about_usage_draw))
+                Text(stringResource(R.string.about_usage_tools))
+                Text(stringResource(R.string.about_usage_clear))
+                Text(stringResource(R.string.about_usage_memo_paste))
+                Text(stringResource(R.string.about_usage_memo_move))
+                Text(stringResource(R.string.about_usage_save))
+                Text(stringResource(R.string.about_usage_export))
+                Text(stringResource(R.string.about_usage_ai))
+                Text(stringResource(R.string.about_usage_settings))
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 // 主な機能
                 Text(
                     stringResource(R.string.about_section_features),
@@ -1101,6 +1354,7 @@ fun AboutDialog(
                 Text(stringResource(R.string.about_feature_drawing))
                 Text(stringResource(R.string.about_feature_pen_thickness))
                 Text(stringResource(R.string.about_feature_eraser))
+                Text(stringResource(R.string.about_feature_memo))
                 Text(stringResource(R.string.about_feature_file_slots))
                 Text(stringResource(R.string.about_feature_i18n))
 

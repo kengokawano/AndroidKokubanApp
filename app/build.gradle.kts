@@ -12,8 +12,8 @@ android {
         applicationId = "jp.saitama.orange.drawkokuban2"
         minSdk = 24
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.22"
+        versionCode = 8
+        versionName = "1.24"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

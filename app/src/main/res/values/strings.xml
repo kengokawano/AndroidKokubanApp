@@ -13,6 +13,7 @@
     <string name="action_save">保存</string>
     <string name="action_file_list">連 絡 帳</string>
     <string name="action_back">戻る</string>
+    <string name="action_send_to_ai">AIへ送る</string>
 
     <!-- ダイアログ -->
     <string name="dialog_clear_all_message">すべての内容を消去しますか？</string>
@@ -32,6 +33,11 @@
     <!-- エクスポートメッセージ -->
     <string name="export_success">この連絡を画像として保存しました</string>
     <string name="export_failed">保存に失敗しました</string>
+    <string name="ai_clip_label">黒板の答案画像</string>
+    <string name="ai_paste_prompt">画像をコピーしました。%1$sの会話欄に貼り付けてください</string>
+    <string name="ai_copy_failed">画像のコピーに失敗しました</string>
+    <string name="ai_not_installed">画像はコピーしました。%1$sアプリを手動で開いて貼り付けてください</string>
+    <string name="ai_open_failed">画像はコピーしました。%1$sを手動で開いて貼り付けてください</string>
 
     <!-- コンテンツ説明 -->
     <string name="content_desc_chalkboard">黒板</string>
@@ -53,6 +59,7 @@
     <string name="settings_section_display">表示設定</string>
     <string name="settings_display_date">黒板の日付表示</string>
     <string name="settings_section_notification">通知設定</string>
+    <string name="settings_section_ai_target">AI送信先</string>
     <string name="settings_notification_quick_access">クイックアクセス通知</string>
     <string name="settings_notification_quick_access_desc">通知バーに常駐して素早くアプリを開けます（省電力）</string>
     <string name="settings_section_file">ファイル設定</string>
@@ -76,6 +83,17 @@
     <string name="about_feature_naming">✓ 日付時間ベース命名</string>
     <string name="about_feature_i18n">✓ 多言語対応（日本語・英語）</string>
     <string name="about_feature_wood_bg">✓ 木目テクスチャ背景</string>
+    <string name="about_feature_memo">✓ クリップボードのピン留めメモ</string>
+    <string name="about_section_usage">使い方</string>
+    <string name="about_usage_draw">・指でなぞって描く（白・赤のチョーク）</string>
+    <string name="about_usage_tools">・下のボタンで色・太さ・消しゴムを切り替え</string>
+    <string name="about_usage_clear">・全消しボタンで黒板をまっさらに</string>
+    <string name="about_usage_memo_paste">・黒板を長押しすると、コピー中の文字をメモとして貼り付け</string>
+    <string name="about_usage_memo_move">・貼ったメモは指でドラッグして移動（全消しで消えます）</string>
+    <string name="about_usage_save">・保存ボタンで30スロットに保存、一覧ボタンで呼び出し</string>
+    <string name="about_usage_export">・書き出しボタンで写真フォルダにPNG保存</string>
+    <string name="about_usage_ai">・送信ボタンで画像をコピーしてAIアプリを起動</string>
+    <string name="about_usage_settings">・設定でペンの太さや日付表示を変更</string>
     <string name="about_section_developer">開発者情報</string>
     <string name="about_dev_name">開発者: Orange Dev</string>
     <string name="about_dev_tech">技術: Kotlin, Jetpack Compose</string>
@@ -116,4 +134,7 @@
     <string name="difficulty_normal">NORMAL</string>
     <string name="difficulty_hard">HARD</string>
     <string name="difficulty_expert">EXPERT</string>
+    <!-- ピン留めメモ -->
+    <string name="memo_clipboard_empty">貼り付けられる内容がありません</string>
+    <string name="content_desc_pinned_memo">ピン留めメモ</string>
 </resources>

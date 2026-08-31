@@ -10,7 +10,6 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
-import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.runtime.mutableStateOf
@@ -18,8 +17,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toArgb
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import java.io.File
+import java.io.FileOutputStream
 
 enum class PenColor {
     WHITE,
@@ -37,7 +38,9 @@ data class ChalkboardState(
     val drawVersion: Int = 0,
     val isDrawing: Boolean = false,
     val showClearAllDialog: Boolean = false,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    // ピン留めメモ（ビットマップとは別レイヤー。保存/書き出し時にだけ重ねて描く）
+    val memos: List<PinnedMemo> = emptyList()
 )
 
 class ChalkboardViewModel : ViewModel() {
@@ -46,6 +49,7 @@ class ChalkboardViewModel : ViewModel() {
         private set
 
     private var lastDrawnPoint: Offset? = null
+    private var nextMemoId: Long = 1L
     // 速度可変ストローク用：イベント間で太さの連続性を保つキャリーオーバー
     private var lastVelocityMult: Float = 1f
 
@@ -53,14 +57,14 @@ class ChalkboardViewModel : ViewModel() {
         android.util.Log.d("ChalkboardViewModel", "initializeBitmap called with context: $context")
         val bitmap = createChalkboardBitmap(width, height)
         fillChalkboardBackground(bitmap, context)
-        state = state.copy(bitmap = bitmap, isLoading = false)
+        state = state.copy(bitmap = bitmap, isLoading = false, memos = emptyList())
     }
 
     fun createNewBitmap(context: Context? = null) {
         state.bitmap?.let { currentBitmap ->
             val newBitmap = createChalkboardBitmap(currentBitmap.width, currentBitmap.height)
             fillChalkboardBackground(newBitmap, context)
-            state = state.copy(bitmap = newBitmap, isLoading = false)
+            state = state.copy(bitmap = newBitmap, isLoading = false, memos = emptyList())
         }
     }
 
@@ -159,8 +163,70 @@ class ChalkboardViewModel : ViewModel() {
         state = state.copy(
             showClearAllDialog = false,
             penColor = PenColor.WHITE,
-            isEraser = false
+            isEraser = false,
+            // メモも一緒に消す
+            memos = emptyList()
         )
+    }
+
+    /**
+     * クリップボードの内容をピン留めメモとして貼り付ける。
+     * 貼り付けられた場合のみ true。
+     */
+    fun pasteMemoFromClipboard(context: Context, position: Offset): Boolean {
+        val bitmap = state.bitmap ?: return false
+        val text = readClipboardText(context) ?: return false
+
+        val memoBitmap = createMemoBitmap(context, text, bitmap.width)
+        // タップ位置を中心に置き、キャンバスからはみ出さないように収める
+        val x = (position.x - memoBitmap.width / 2f)
+            .coerceIn(0f, maxOf(0f, (bitmap.width - memoBitmap.width).toFloat()))
+        val y = (position.y - memoBitmap.height / 2f)
+            .coerceIn(0f, maxOf(0f, (bitmap.height - memoBitmap.height).toFloat()))
+
+        val memo = PinnedMemo(
+            id = nextMemoId++,
+            text = text,
+            bitmap = memoBitmap,
+            x = x,
+            y = y
+        )
+        state = state.copy(memos = state.memos + memo)
+        return true
+    }
+
+    /** 指定座標にあるメモのID（上に載っているものを優先）。無ければ null。 */
+    fun hitTestMemo(point: Offset): Long? =
+        state.memos.lastOrNull { it.contains(point.x, point.y) }?.id
+
+    /** メモを相対移動する。キャンバス外にはみ出さないように収める。 */
+    fun moveMemo(id: Long, dx: Float, dy: Float) {
+        val bitmap = state.bitmap ?: return
+        val memos = state.memos.map { memo ->
+            if (memo.id != id) {
+                memo
+            } else {
+                memo.copy(
+                    x = (memo.x + dx)
+                        .coerceIn(0f, maxOf(0f, (bitmap.width - memo.width).toFloat())),
+                    y = (memo.y + dy)
+                        .coerceIn(0f, maxOf(0f, (bitmap.height - memo.height).toFloat()))
+                )
+            }
+        }
+        state = state.copy(memos = memos)
+    }
+
+    /** メモを重ねた状態のビットマップを返す。メモが無ければ元のビットマップをそのまま返す。 */
+    private fun flattenWithMemos(base: Bitmap): Bitmap {
+        if (state.memos.isEmpty()) return base
+
+        val flattened = base.copy(Bitmap.Config.ARGB_8888, true) ?: return base
+        val canvas = Canvas(flattened)
+        state.memos.forEach { memo ->
+            canvas.drawBitmap(memo.bitmap, memo.x, memo.y, null)
+        }
+        return flattened
     }
 
     fun saveBitmap(context: Context, slotNumber: Int? = null): SlotMeta? {
@@ -177,7 +243,13 @@ class ChalkboardViewModel : ViewModel() {
         Log.d("ChalkboardViewModel", "File path: ${file.absolutePath}")
 
         return try {
-            val result = savePng(bitmap, file)
+            // メモを重ねた状態で保存する
+            val flattened = flattenWithMemos(bitmap)
+            val result = try {
+                savePng(flattened, file)
+            } finally {
+                if (flattened !== bitmap) flattened.recycle()
+            }
             Log.d("ChalkboardViewModel", "Save successful: ${file.exists()}, size: ${file.length()}")
             result
         } catch (e: Exception) {
@@ -200,7 +272,7 @@ class ChalkboardViewModel : ViewModel() {
         val file = File(context.filesDir, "chalkboard_$slotNumber.png")
         val bitmap = loadPng(file)
         if (bitmap != null) {
-            state = state.copy(bitmap = bitmap, isLoading = false)
+            state = state.copy(bitmap = bitmap, isLoading = false, memos = emptyList())
         }
     }
 
@@ -222,12 +294,25 @@ class ChalkboardViewModel : ViewModel() {
         val top = (height - currentBitmap.height) / 2f
         canvas.drawBitmap(currentBitmap, left, top, null)
 
-        state = state.copy(bitmap = newBitmap, isLoading = false)
+        // メモも同じだけずらし、新しいキャンバスの中に収める
+        val movedMemos = state.memos.map { memo ->
+            memo.copy(
+                x = (memo.x + left).coerceIn(0f, maxOf(0f, (width - memo.width).toFloat())),
+                y = (memo.y + top).coerceIn(0f, maxOf(0f, (height - memo.height).toFloat()))
+            )
+        }
+
+        state = state.copy(bitmap = newBitmap, isLoading = false, memos = movedMemos)
     }
 
     fun createThumbnail(maxW: Int = 200, maxH: Int = 150): Bitmap? {
         val bitmap = state.bitmap ?: return null
-        return makeThumbnail(bitmap, maxW, maxH)
+        val flattened = flattenWithMemos(bitmap)
+        return try {
+            makeThumbnail(flattened, maxW, maxH)
+        } finally {
+            if (flattened !== bitmap) flattened.recycle()
+        }
     }
 
     private fun getPenThickness(context: Context): Float {
@@ -272,20 +357,74 @@ class ChalkboardViewModel : ViewModel() {
 
             uri?.let { imageUri ->
                 context.contentResolver.openOutputStream(imageUri)?.use { outputStream ->
+                    // メモを重ねた状態で書き出す
+                    val flattened = flattenWithMemos(bitmap)
                     val exportBitmap = if (exportWithBackground) {
                         // 背景ありの場合はそのまま保存
-                        bitmap
+                        flattened
                     } else {
                         // 背景を透過させる場合
-                        createTransparentBitmap(bitmap)
+                        createTransparentBitmap(flattened)
                     }
-                    exportBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                    try {
+                        exportBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                    } finally {
+                        if (exportBitmap !== flattened) exportBitmap.recycle()
+                        if (flattened !== bitmap) flattened.recycle()
+                    }
                 }
                 true
             } ?: false
         } catch (e: Exception) {
             Log.e("ChalkboardViewModel", "Export failed", e)
             false
+        }
+    }
+
+    fun createClipboardPngUri(context: Context): Uri? {
+        val bitmap = state.bitmap ?: return null
+        val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+        val exportWithBackground = prefs.getBoolean("export_with_background", true)
+        val shareDirectory = File(context.cacheDir, "shared_images")
+        val shareFile = File(shareDirectory, "latest_chalkboard.png")
+
+        return try {
+            if (!shareDirectory.exists() && !shareDirectory.mkdirs()) {
+                return null
+            }
+
+            // メモを重ねた状態でクリップボードへ渡す
+            val flattened = flattenWithMemos(bitmap)
+            val exportBitmap = if (exportWithBackground) {
+                flattened
+            } else {
+                createTransparentBitmap(flattened)
+            }
+
+            try {
+                FileOutputStream(shareFile).use { outputStream ->
+                    if (!exportBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)) {
+                        throw IllegalStateException("PNG compression failed")
+                    }
+                }
+            } finally {
+                if (exportBitmap !== flattened) {
+                    exportBitmap.recycle()
+                }
+                if (flattened !== bitmap) {
+                    flattened.recycle()
+                }
+            }
+
+            FileProvider.getUriForFile(
+                context,
+                "${BuildConfig.APPLICATION_ID}.fileprovider",
+                shareFile
+            )
+        } catch (e: Exception) {
+            shareFile.delete()
+            Log.e("ChalkboardViewModel", "Clipboard PNG creation failed", e)
+            null
         }
     }
 
